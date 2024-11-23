@@ -54,7 +54,7 @@ export const authenticateVendor = async (req, res, next) => {
   try {
     // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
+    console.log(decoded);
     // Check if vendor exists in the database
     const vendor = await Vendor.findById(decoded.id);
     if (!vendor) {

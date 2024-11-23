@@ -4,6 +4,8 @@ import { connectDB } from "./config/db.js";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import vendorRoutes from "./routes/vendorRoutes.js";
+import productRoutes from "./routes/productRoutes.js";
+import cartRoutes from "./routes/cartRoutes.js";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 
 dotenv.config();
@@ -12,8 +14,11 @@ connectDB();
 const app = express();
 app.use(express.json());
 app.use(cors());
+
 app.use("/api/auth", authRoutes);
 app.use("/api/vendor", vendorRoutes);
+app.use("/api/product", productRoutes);
+app.use("/api/cart", cartRoutes);
 
 // Error Middleware
 app.use(errorMiddleware);

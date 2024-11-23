@@ -52,6 +52,7 @@ const productSchema = new mongoose.Schema(
     offers: [offerSchema], // Offers applicable to the product
     stock: { type: Number, default: 0 }, // Total stock
     isActive: { type: Boolean, default: true }, // Product active/inactive status
+    isApproved: { type: Boolean, default: false }, // Product active/inactive status
     rating: {
       average: { type: Number, default: 0 }, // Average rating
       count: { type: Number, default: 0 }, // Total number of ratings
