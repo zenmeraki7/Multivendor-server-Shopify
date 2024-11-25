@@ -1,4 +1,4 @@
-import Log from "../models/Log.js";
+import Log from "../models/Logs.js";
 
 export const logMiddleware = async (req, res, next) => {
   const startTime = Date.now();
