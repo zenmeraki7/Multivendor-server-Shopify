@@ -10,6 +10,9 @@ import wishlistRoutes from "./routes/wishlistRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import subcategoryRoutes from "./routes/subcategoryRoutes.js";
+import bankRoutes from "./routes/bankRoutes.js";
+import stateRoutes from "./routes/stateRoutes.js";
+import countryRoutes from "./routes/countryRoutes.js";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 
 dotenv.config();
@@ -27,6 +30,9 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/review", reviewRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/subcategory", subcategoryRoutes);
+app.use("/api/banks", bankRoutes);
+app.use("/api/states", stateRoutes);
+app.use("/api/countries", countryRoutes);
 
 // Error Middleware
 app.use(errorMiddleware);
