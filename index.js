@@ -14,6 +14,7 @@ import bankRoutes from "./routes/bankRoutes.js";
 import stateRoutes from "./routes/stateRoutes.js";
 import countryRoutes from "./routes/countryRoutes.js";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
+import { logMiddleware } from "./middlewares/logMiddleware.js";
 
 dotenv.config();
 connectDB();
@@ -21,6 +22,9 @@ connectDB();
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+// Log all API calls
+app.use(logMiddleware);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/vendor", vendorRoutes);
