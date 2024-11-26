@@ -35,9 +35,11 @@ const productSchema = new mongoose.Schema(
       ref: "Category",
       required: true,
     }, // Main category
-    subcategories: [
-      { type: mongoose.Schema.Types.ObjectId, ref: "Subcategory" },
-    ], // Array of subcategories
+    subcategories: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subcategory",
+      required: true,
+    }, // Array of subcategories
     seller: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Vendor",
@@ -61,7 +63,6 @@ const productSchema = new mongoose.Schema(
     tags: [{ type: String }], // Search tags (e.g., "smartphone", "android")
     shippingDetails: {
       weight: { type: Number }, // Weight in kilograms
-      dimensions: { type: String }, // Dimensions (e.g., "12 x 8 x 6 cm")
       freeShipping: { type: Boolean, default: false }, // Whether free shipping is available
     },
     returnPolicy: {

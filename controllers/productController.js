@@ -3,77 +3,6 @@ import Notification from "../models/Notification.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import Joi from "joi";
 
-// Joi schema for product creation validation
-const productCreationSchema = Joi.object({
-  title: Joi.string().required().trim(),
-  description: Joi.string().required(),
-  brand: Joi.string().required(),
-  category: Joi.string().required(), // You may want to replace this with ObjectId validation if needed
-  subcategories: Joi.array(), // You may want to replace this with ObjectId validation if needed
-  price: Joi.number().required().min(0),
-  discountedPrice: Joi.number().required().min(0),
-  thumbnail: Joi.object({
-    url: Joi.string().uri().required(),
-    altText: Joi.string().optional(),
-  }).required(),
-  images: Joi.array()
-    .items(
-      Joi.object({
-        url: Joi.string().uri().required(),
-        altText: Joi.string().optional(),
-      })
-    )
-    .required(),
-  variants: Joi.array()
-    .items(
-      Joi.object({
-        attribute: Joi.string().required(),
-        value: Joi.string().required(),
-        additionalPrice: Joi.number().min(0).optional(),
-        stock: Joi.number().min(0).optional(),
-        image: Joi.object({
-          url: Joi.string().uri().required(),
-          altText: Joi.string().optional(),
-        }).optional(),
-      })
-    )
-    .optional(),
-  specifications: Joi.array()
-    .items(
-      Joi.object({
-        key: Joi.string().required(),
-        value: Joi.string().required(),
-      })
-    )
-    .optional(),
-  offers: Joi.array()
-    .items(
-      Joi.object({
-        title: Joi.string().required(),
-        description: Joi.string().optional(),
-        discountPercentage: Joi.number().min(0).max(100).optional(),
-        validUntil: Joi.date().optional(),
-      })
-    )
-    .optional(),
-  stock: Joi.number().min(0).default(0),
-  tags: Joi.array().items(Joi.string()).optional(),
-  shippingDetails: Joi.object({
-    weight: Joi.number().optional(),
-    dimensions: Joi.string().optional(),
-    freeShipping: Joi.boolean().optional().default(false),
-  }).optional(),
-  returnPolicy: Joi.object({
-    isReturnable: Joi.boolean().default(false),
-    returnWindow: Joi.number().optional(),
-  }).optional(),
-  meta: Joi.object({
-    title: Joi.string().optional(),
-    description: Joi.string().optional(),
-    keywords: Joi.array().items(Joi.string()).optional(),
-  }).optional(),
-});
-
 // Joi schema for product approval/rejection validation
 const productApprovalSchema = Joi.object({
   productId: Joi.string().required(),
@@ -82,27 +11,25 @@ const productApprovalSchema = Joi.object({
 
 // Vendor creates a product (unapproved)
 export const createProduct = async (req, res) => {
+  console.log(req.uploadedImages);
+  console.log(req.thumbnailUrl);
   try {
-    // Validate Input
-    const { error } = productCreationSchema.validate(req.body, {
-      abortEarly: false,
-    });
-    if (error) {
-      return res.status(400).json({
-        message: "Validation error",
-        errors: error.details.map((err) => ({
-          field: err.path[0],
-          message: err.message,
-        })),
-      });
-    }
-    // Check if the vendor is authenticated (assuming vendor ID is in the token)
     const vendorId = req.vendor._id; // Adjust this based on your middleware
     console.log(vendorId);
 
     if (!vendorId) {
       return res.status(404).json({ message: "Missing vendor id" });
     }
+    req.body.price = 999.0;
+    req.body.discountedPrice = 799.0;
+    req.body.stock = 50;
+    req.body.thumbnail = { url: req.thumbnailUrl };
+    req.body.images = req.uploadedImages?.map((item, index) => {
+      return {
+        url: item.url,
+      };
+    });
+    console.log(req.body);
     // Create new product (status 'pending' as it's awaiting approval)
     const newProduct = new Product({ seller: vendorId, ...req.body });
 
@@ -229,10 +156,9 @@ export const getProductById = async (req, res) => {
   const { productId } = req.params;
 
   try {
-    const product = await Product.findById(productId)
-      .populate("seller")
-      // .populate("category")
-      // .populate("subcategories");
+    const product = await Product.findById(productId).populate("seller");
+    // .populate("category")
+    // .populate("subcategories");
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
