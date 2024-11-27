@@ -5,71 +5,6 @@ import Notification from "../models/Notification.js";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../utils/sendEmail.js";
 
-const vendorRegistrationSchema = Joi.object({
-  fullName: Joi.string().trim().required().messages({
-    "string.empty": "Full name is required.",
-  }),
-  email: Joi.string().email().required().messages({
-    "string.email": "A valid email is required.",
-    "string.empty": "Email is required.",
-  }),
-  password: Joi.string().min(6).required().messages({
-    "string.min": "Password must be at least 6 characters.",
-    "string.empty": "Password is required.",
-  }),
-  phoneNum: Joi.string()
-    .pattern(/^\d{10}$/)
-    .required()
-    .messages({
-      "string.pattern.base": "Phone number must be 10 digits.",
-      "string.empty": "Phone number is required.",
-    }),
-  address: Joi.string().required().messages({
-    "string.empty": "Address is required.",
-  }),
-  zipCode: Joi.number().integer().required().messages({
-    "number.base": "Zip code must be a number.",
-    "any.required": "Zip code is required.",
-  }),
-  city: Joi.string().trim().required().messages({
-    "string.empty": "City is required.",
-  }),
-  state: Joi.string().trim().required().messages({
-    "string.empty": "State is required.",
-  }),
-  companyName: Joi.string().trim().required().messages({
-    "string.empty": "Company name is required.",
-  }),
-  gstNumber: Joi.string()
-    .pattern(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}[Z]{1}[A-Z0-9]{1}$/)
-    .required()
-    .messages({
-      "string.pattern.base": "GST number must be valid.",
-      "string.empty": "GST number is required.",
-    }),
-  panNumber: Joi.string()
-    .pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)
-    .required()
-    .messages({
-      "string.pattern.base": "PAN number must be valid.",
-      "string.empty": "PAN number is required.",
-    }),
-  bankDetails: Joi.object({
-    accountHolderName: Joi.string().required().messages({
-      "string.empty": "Account holder name is required.",
-    }),
-    accountNumber: Joi.string().required().messages({
-      "string.empty": "Account number is required.",
-    }),
-    ifscCode: Joi.string().required().messages({
-      "string.empty": "IFSC code is required.",
-    }),
-    bankName: Joi.string().required().messages({
-      "string.empty": "Bank name is required.",
-    }),
-  }).required(),
-});
-
 // Approve/Reject Vendor Schema
 const vendorApprovalSchema = Joi.object({
   verificationRemarks: Joi.string().trim().required().messages({
@@ -79,36 +14,13 @@ const vendorApprovalSchema = Joi.object({
 
 // Create Vendor Account
 export const createVendor = async (req, res) => {
-  try {
-    const {
-      fullName,
-      email,
-      password,
-      phoneNum,
-      address,
-      zipCode,
-      city,
-      state,
-      companyName,
-      gstNumber,
-      panNumber,
-      bankDetails,
-    } = req.body;
-
-    // Validate Input
-    const { error } = vendorRegistrationSchema.validate(req.body, {
-      abortEarly: false,
+  if (!req.companyIconUrl) {
+    return res.status(400).json({
+      message: "companyIcon is required",
     });
-    if (error) {
-      return res.status(400).json({
-        message: "Validation error",
-        errors: error.details.map((err) => ({
-          field: err.path[0],
-          message: err.message,
-        })),
-      });
-    }
-
+  }
+  try {
+    const { email, password, phoneNum } = req.body;
     // Check if vendor with the email or phone number already exists
     const existingVendor = await Vendor.findOne({
       $or: [{ email }, { phoneNum }],
@@ -121,21 +33,10 @@ export const createVendor = async (req, res) => {
 
     // Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    const vendor = new Vendor({
-      fullName,
-      email,
-      password: hashedPassword,
-      phoneNum,
-      address,
-      zipCode,
-      city,
-      state,
-      companyName,
-      gstNumber,
-      panNumber,
-      bankDetails,
-    });
+    req.body.password = hashedPassword;
+    req.body.companyIcon = req.companyIconUrl;
+    req.body.zipCode = 123456;
+    const vendor = new Vendor(req.body);
 
     await vendor.save();
 
@@ -206,6 +107,66 @@ export const verifyVendor = async (req, res) => {
       message: "Invalid or expired token.",
       error: error.message,
     });
+  }
+};
+
+// Controller to update document details
+export const updateDocumentDetails = async (req, res) => {
+  if (!req.documentURL) {
+    return res.status(404).json({ message: "document image required" });
+  }
+
+  try {
+    // Find vendor and update PAN details
+    const vendor = await Vendor.findById(req.params.vendorId);
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    vendor[req.body.documentType] = {
+      documentNumber: req.body.documentNumber,
+      documentUrl: req.documentURL,
+    };
+
+    await vendor.save();
+    return res.status(200).json({
+      message: `${req.body.documentType} details updated successfully`,
+      vendor,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Controller to update bank details
+export const updateBankDetails = async (req, res) => {
+  if (!req.documentURL) {
+    return res.status(404).json({ message: "document image required" });
+  }
+  const { accountHolderName, accountNumber, ifscCode, bankName } = req.body;
+
+  try {
+    // Find vendor and update bank details
+    const vendor = await Vendor.findById(req.params.vendorId);
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    vendor.bankDetails = {
+      accountHolderName,
+      accountNumber,
+      ifscCode,
+      bankName,
+      documentUrl: req.documentURL,
+    };
+    await vendor.save();
+    return res
+      .status(200)
+      .json({ message: "Bank details updated successfully", vendor });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -292,7 +253,6 @@ export const getVendorById = async (req, res) => {
   }
 };
 
-// Approve Vendor
 export const approveVendor = async (req, res) => {
   try {
     const { id } = req.params;
@@ -304,6 +264,10 @@ export const approveVendor = async (req, res) => {
     }
 
     vendor.isVerified = true;
+    vendor.isKycVerified = true;
+    vendor.PAN.verified = true;
+    vendor.GSTIN.verified = true;
+    vendor.bankDetails.isVerified = true;
     vendor.verificationRemarks = verificationRemarks || "Approved by admin.";
     await vendor.save();
 
@@ -316,6 +280,13 @@ export const approveVendor = async (req, res) => {
       to: vendor._id,
     });
 
+    // Send approval email
+    await sendEmail(
+      vendor.email,
+      "Vendor Account Approved",
+      `Dear ${vendor.fullName},\n\nYour vendor account "${vendor.companyName}" has been approved by the admin. You can now access your vendor dashboard and start listing your products.\n\nThank you,\nTeam`
+    );
+
     res.status(200).json({ message: "Vendor approved successfully." });
   } catch (error) {
     res
@@ -324,7 +295,6 @@ export const approveVendor = async (req, res) => {
   }
 };
 
-// Reject Vendor
 export const rejectVendor = async (req, res) => {
   try {
     const { id } = req.params;
@@ -358,6 +328,13 @@ export const rejectVendor = async (req, res) => {
       link: `/vendor/support`, // Example link for vendor support
       to: vendor._id,
     });
+
+    // Send rejection email
+    await sendEmail(
+      vendor.email,
+      "Vendor Account Rejected",
+      `Dear ${vendor.fullName},\n\nWe regret to inform you that your vendor account "${vendor.companyName}" has been rejected. Remarks: ${vendor.verificationRemarks}.\n\nIf you believe this is a mistake or need assistance, please contact our support team.\n\nThank you,\nTeam`
+    );
 
     res.status(200).json({ message: "Vendor rejected successfully." });
   } catch (error) {

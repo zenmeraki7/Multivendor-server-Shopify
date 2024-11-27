@@ -1,19 +1,30 @@
 import mongoose from "mongoose";
 
-const documentSchema = new mongoose.Schema({
-  documentType: {
+const documentDetailsSchema = new mongoose.Schema({
+  documentNumber: {
     type: String,
-    enum: [
-      "PAN Card",
-      "GST Certificate",
-      "Aadhar Card",
-      "Bank Statement",
-      "Trade License",
-    ],
-    required: true,
+    required: true, // GST number, PAN number, etc.
   },
-  documentUrl: { type: String, required: true }, // URL for the uploaded document
-  verified: { type: Boolean, default: false }, // Verification status for the document
+  documentUrl: {
+    type: String,
+    required: true, // URL for the uploaded document
+  },
+  verified: {
+    type: Boolean,
+    default: false, // Verification status for the document
+  },
+});
+
+const bankDetailsSchema = new mongoose.Schema({
+  accountHolderName: { type: String, required: true },
+  accountNumber: { type: String, required: true },
+  ifscCode: { type: String, required: true },
+  bankName: { type: String, required: true },
+  documentUrl: {
+    type: String,
+    required: true, // URL for the uploaded bank-related document (e.g., canceled cheque)
+  },
+  isVerified: { type: Boolean, default: false }, // Verification status for bank details
 });
 
 const vendorSchema = new mongoose.Schema(
@@ -51,12 +62,14 @@ const vendorSchema = new mongoose.Schema(
       required: true,
     },
     state: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "State",
       required: true,
     },
     country: {
-      type: String,
-      default: "India", // Default to India
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Country",
+      required: true,
     },
     companyName: {
       type: String,
@@ -65,18 +78,61 @@ const vendorSchema = new mongoose.Schema(
     },
     companyIcon: {
       type: String,
+      required: true,
     },
     website: {
       type: String,
     },
-    documents: [documentSchema], // Stores required documents for verification
+    PAN: {
+      documentNumber: {
+        type: String,
+        required: true, // GST number, PAN number, etc.
+      },
+      documentUrl: {
+        type: String,
+        required: true, // URL for the uploaded document
+      },
+      verified: {
+        type: Boolean,
+        default: false, // Verification status for the document
+      },
+    }, // Consolidated for all document types
+    GSTIN: {
+      documentNumber: {
+        type: String,
+        required: true, // GST number, PAN number, etc.
+      },
+      documentUrl: {
+        type: String,
+        required: true, // URL for the uploaded document
+      },
+      verified: {
+        type: Boolean,
+        default: false, // Verification status for the document
+      },
+    }, // Consolidated for all document types
+    isKycVerified: {
+      type: Boolean,
+      default: false, // Overall KYC verification status
+    },
+    bankDetails: {
+      accountHolderName: { type: String, required: true },
+      accountNumber: { type: String, required: true },
+      ifscCode: { type: String, required: true },
+      bankName: { type: String, required: true },
+      documentUrl: {
+        type: String,
+        required: true, // URL for the uploaded bank-related document (e.g., canceled cheque)
+      },
+      isVerified: { type: Boolean, default: false }, // Verification status for bank details
+    },
     isVerified: {
       type: Boolean,
-      default: false, // Vendor verification status
+      default: false, // Overall vendor verification status
     },
     isEmailVerified: {
       type: Boolean,
-      default: false, // Vendor verification status
+      default: false, // Email verification status
     },
     verificationRemarks: {
       type: String, // Remarks or reasons for approval/rejection
@@ -84,20 +140,6 @@ const vendorSchema = new mongoose.Schema(
     isBlocked: {
       type: Boolean,
       default: false,
-    },
-    bankDetails: {
-      accountHolderName: { type: String, required: true },
-      accountNumber: { type: String, required: true },
-      ifscCode: { type: String, required: true },
-      bankName: { type: String, required: true },
-    },
-    gstNumber: {
-      type: String,
-      required: true, // GST number is mandatory in India for selling
-    },
-    panNumber: {
-      type: String,
-      required: true, // PAN is mandatory for tax filing
     },
     salesData: {
       totalSales: { type: Number, default: 0 }, // Total sales in INR
