@@ -13,6 +13,12 @@ const productApprovalSchema = Joi.object({
 export const createProduct = async (req, res) => {
   console.log(req.uploadedImages);
   console.log(req.thumbnailUrl);
+  if (!req.uploadedImages?.length) {
+    return res.status(404).json({ message: "Missing images" });
+  }
+  if (!req.thumbnailUrl) {
+    return res.status(404).json({ message: "Missing thumbnail" });
+  }
   try {
     const vendorId = req.vendor._id; // Adjust this based on your middleware
     console.log(vendorId);
@@ -169,5 +175,101 @@ export const getProductById = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error fetching product", error: err.message });
+  }
+};
+
+export const addVariant = async (req, res) => {
+  const { productId } = req.params;
+  const { attribute, value, additionalPrice, stock } = req.body;
+
+  try {
+    // Find the product
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    // Check if the variant already exists
+    const existingVariant = product.variants.find(
+      (v) => v.attribute === attribute && v.value === value
+    );
+
+    if (existingVariant) {
+      return res.status(400).json({
+        message: "Variant with the same attribute and value already exists.",
+      });
+    }
+
+    // Add new variant
+    const newVariant = {
+      attribute,
+      value,
+      additionalPrice: additionalPrice || 0,
+      stock: stock || 0,
+      image: req.image || null,
+    };
+    product.variants.push(newVariant);
+
+    // Save the updated product
+    await product.save();
+
+    res.status(201).json({
+      message: "Variant added successfully.",
+      product,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error adding variant.",
+      error: error.message,
+    });
+  }
+};
+
+export const editVariant = async (req, res) => {
+  const { productId, variantId } = req.params;
+  const { attribute, value, additionalPrice, stock } = req.body;
+
+  try {
+    // Find the product
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    // Find the variant by its ID
+    const variantIndex = product.variants.findIndex(
+      (v) => v._id.toString() === variantId
+    );
+
+    if (variantIndex === -1) {
+      return res.status(404).json({
+        message: "Variant not found.",
+      });
+    }
+
+    // Update the variant
+    if (attribute !== undefined)
+      product.variants[variantIndex].attribute = attribute;
+    if (value !== undefined) product.variants[variantIndex].value = value;
+    if (additionalPrice !== undefined)
+      product.variants[variantIndex].additionalPrice = additionalPrice;
+    if (stock !== undefined) product.variants[variantIndex].stock = stock;
+    if (req.image !== undefined)
+      product.variants[variantIndex].image = req.image
+        ? { url: req.image }
+        : product.variants[variantIndex].image;
+
+    // Save the updated product
+    await product.save();
+
+    res.status(200).json({
+      message: "Variant updated successfully.",
+      product,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error updating variant.",
+      error: error.message,
+    });
   }
 };

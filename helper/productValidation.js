@@ -59,8 +59,44 @@ const productCreationSchema = Joi.object({
   }).optional(),
 });
 
+const variantSchema = Joi.object({
+  attribute: Joi.string().required().messages({
+    "any.required": "'attribute' is a required field.",
+    "string.empty": "'attribute' cannot be empty.",
+  }),
+  value: Joi.string().required().messages({
+    "any.required": "'value' is a required field.",
+    "string.empty": "'value' cannot be empty.",
+  }),
+  additionalPrice: Joi.number().optional().messages({
+    "number.base": "'additionalPrice' must be a number.",
+  }),
+  stock: Joi.number().optional().messages({
+    "number.base": "'stock' must be a number.",
+  }),
+});
+
 export const validateProductCreation = (req, res, next) => {
   const { error } = productCreationSchema.validate(req.body, {
+    abortEarly: false,
+  });
+
+  if (error) {
+    return res.status(400).json({
+      status: "error",
+      message: "Validation error",
+      details: error.details.map((err) => ({
+        message: err.message,
+        field: err.path[0],
+      })),
+    });
+  }
+
+  next();
+};
+
+export const validateVariant = (req, res, next) => {
+  const { error } = variantSchema.validate(req.body, {
     abortEarly: false,
   });
 

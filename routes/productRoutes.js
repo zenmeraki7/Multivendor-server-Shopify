@@ -4,16 +4,25 @@ import {
   updateProductStatus,
   getAllProducts,
   getProductById,
+  addVariant,
+  editVariant,
 } from "../controllers/productController.js";
-import { authenticateVendor } from "../middlewares/jwtMiddleware.js";
+import {
+  authenticateAdmin,
+  authenticateVendor,
+  authentication,
+} from "../middlewares/jwtMiddleware.js";
 import {
   handleImageUpload,
   uploadImages,
 } from "../middlewares/uploadMiddleware.js";
-import { validateProductCreation } from "../helper/productValidation.js";
+import {
+  validateProductCreation,
+  validateVariant,
+} from "../helper/productValidation.js";
 
 const router = express.Router();
-router.get("/allproduct", getAllProducts); // Admin views all products
+router.get("/allproduct", authenticateAdmin, getAllProducts); // Admin views all products
 
 // Vendor routes
 router.post(
@@ -24,9 +33,28 @@ router.post(
   handleImageUpload,
   createProduct
 ); // Only vendors can create products
-router.get("/:productId", getProductById); // View product details
+
+router.get("/:productId", authentication, getProductById); // View product details
 
 // Admin routes
-router.put("/status", updateProductStatus); // Admin approves/rejects products
+router.put("/status", authenticateAdmin, updateProductStatus); // Admin approves/rejects products
+
+router.post(
+  "/product-variant/:productId",
+  authenticateVendor,
+  uploadImages,
+  validateVariant,
+  handleImageUpload,
+  addVariant
+);
+
+router.put(
+  "/product-variant/:productId/:variantId",
+  authenticateVendor,
+  uploadImages,
+  validateVariant,
+  handleImageUpload,
+  editVariant
+); // Edit an existing variant
 
 export default router;
