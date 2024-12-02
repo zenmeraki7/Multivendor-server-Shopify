@@ -13,8 +13,9 @@ export const subcategoryValidationSchema = Joi.object({
   description: Joi.string().optional().max(500).messages({
     "string.max": "Description should not exceed 500 characters",
   }),
-  isActive: Joi.boolean().optional().messages({
-    "boolean.base": "isActive should be a boolean value",
+  categoryType: Joi.string().required().messages({
+    "string.empty": "Category Type id is required",
+    "string.base": "Category type ID should be a valid string",
   }),
 });
 
@@ -36,12 +37,7 @@ export const createSubcategory = async (req, res) => {
   }
 
   try {
-    const subcategory = new Subcategory({
-      name: req.body.name,
-      category: req.body.category,
-      description: req.body.description,
-      isActive: req.body.isActive || true, // Default to true if not provided
-    });
+    const subcategory = new Subcategory(req.body);
 
     await subcategory.save();
     res
@@ -74,12 +70,7 @@ export const updateSubcategory = async (req, res) => {
   try {
     const subcategory = await Subcategory.findByIdAndUpdate(
       req.params.id,
-      {
-        name: req.body.name,
-        category: req.body.category,
-        description: req.body.description,
-        isActive: req.body.isActive,
-      },
+      req.body,
       { new: true }
     );
 
@@ -100,7 +91,9 @@ export const updateSubcategory = async (req, res) => {
 // Delete Subcategory
 export const deleteSubcategory = async (req, res) => {
   try {
-    const subcategory = await Subcategory.findByIdAndDelete(req.params.id);
+    const subcategory = await Subcategory.findByIdAndUpdate(req.params.id, {
+      isActive: false,
+    });
 
     if (!subcategory) {
       return res.status(404).json({ message: "Subcategory not found" });

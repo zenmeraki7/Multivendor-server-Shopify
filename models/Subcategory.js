@@ -9,6 +9,11 @@ const subcategorySchema = new mongoose.Schema(
       ref: "Category", // Reference to the parent Category model
       required: true,
     },
+    categoryType: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CategoryType",
+      required: true,
+    },
     description: { type: String }, // Optional: Description of the subcategory
     isActive: { type: Boolean, default: true }, // Whether the subcategory is active
   },

@@ -1,5 +1,6 @@
 import Joi from "joi";
 import Category from "../models/Category.js";
+import CategoryType from "../models/CategoryType.js";
 
 export const categoryValidationSchema = Joi.object({
   name: Joi.string().required().messages({
@@ -9,12 +10,9 @@ export const categoryValidationSchema = Joi.object({
   description: Joi.string().optional().max(500).messages({
     "string.max": "Description should not exceed 500 characters",
   }),
-  categoryType: Joi.string().required().messages({
-    "string.empty": "Category type name is required",
-  }),
 });
 
-export const createCategory = async (req, res) => {
+export const createCategoryType = async (req, res) => {
   // Validate the request body using Joi
   const { error } = categoryValidationSchema.validate(req.body, {
     abortEarly: false,
@@ -31,12 +29,16 @@ export const createCategory = async (req, res) => {
   }
 
   try {
-    const category = new Category(req.body);
+    const category = new CategoryType({
+      name: req.body.name,
+      description: req.body.description,
+      isActive: req.body.isActive || true, // Default to true if not provided
+    });
 
     await category.save();
     res
       .status(201)
-      .json({ message: "Category created successfully", category });
+      .json({ message: "Category type created successfully", category });
   } catch (err) {
     res
       .status(500)
@@ -45,7 +47,7 @@ export const createCategory = async (req, res) => {
 };
 
 // Update Category
-export const updateCategory = async (req, res) => {
+export const updateCategoryType = async (req, res) => {
   // Validate the request body using Joi
   const { error } = categoryValidationSchema.validate(req.body, {
     abortEarly: false,
@@ -62,9 +64,15 @@ export const updateCategory = async (req, res) => {
   }
 
   try {
-    const category = await Category.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    const category = await CategoryType.findByIdAndUpdate(
+      req.params.id,
+      {
+        name: req.body.name,
+        description: req.body.description,
+        isActive: req.body.isActive,
+      },
+      { new: true }
+    );
 
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
@@ -81,9 +89,9 @@ export const updateCategory = async (req, res) => {
 };
 
 // Delete Category
-export const deleteCategory = async (req, res) => {
+export const deleteCategoryType = async (req, res) => {
   try {
-    const category = await Category.findByIdAndUpdate(req.params.id, {
+    const category = await CategoryType.findByIdAndUpdate(req.params.id, {
       isActive: false,
     });
 
@@ -100,9 +108,9 @@ export const deleteCategory = async (req, res) => {
 };
 
 // Get All Categories
-export const getAllCategories = async (req, res) => {
+export const getAllCategoriesTypes = async (req, res) => {
   try {
-    const categories = await Category.find().populate("categoryType", "name");
+    const categories = await CategoryType.find();
     res.status(200).json({ categories });
   } catch (err) {
     res

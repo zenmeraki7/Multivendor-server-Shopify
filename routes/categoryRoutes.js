@@ -5,18 +5,18 @@ import {
   deleteCategory,
   getAllCategories,
 } from "../controllers/categoryController.js";
-import { authentication } from "../middlewares/jwtMiddleware.js"; // Optional: If you need authentication
+import { authenticateAdmin, authentication } from "../middlewares/jwtMiddleware.js"; // Optional: If you need authentication
 
 const router = express.Router();
 
 // Create a new category
-router.post("/create", authentication, createCategory);
+router.post("/create", authenticateAdmin, createCategory);
 
 // Update a category
-router.put("/update/:id", authentication, updateCategory);
+router.put("/update/:id", authenticateAdmin, updateCategory);
 
 // Delete a category
-router.delete("/delete/:id", authentication, deleteCategory);
+router.delete("/delete/:id", authenticateAdmin, deleteCategory);
 
 // Get all categories
 router.get("/all", authentication, getAllCategories);
