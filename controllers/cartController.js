@@ -45,7 +45,7 @@ export const addToCart = async (req, res) => {
         })),
       });
     }
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     // Check if the cart exists for the user
     let cart = await Cart.findOne({ user: userId });
@@ -86,7 +86,7 @@ export const addToCart = async (req, res) => {
 
 export const getUserCart = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const cart = await Cart.findOne({ user: userId }).populate({
       path: "products.product",
@@ -122,7 +122,7 @@ export const updateCartItem = async (req, res) => {
         })),
       });
     }
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const cart = await Cart.findOne({ user: userId });
     if (!cart) {
@@ -169,7 +169,7 @@ export const removeCartItem = async (req, res) => {
         })),
       });
     }
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const cart = await Cart.findOne({ user: userId });
     if (!cart) {
@@ -195,7 +195,7 @@ export const removeCartItem = async (req, res) => {
 
 export const clearCart = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const cart = await Cart.findOne({ user: userId });
     if (!cart) {
