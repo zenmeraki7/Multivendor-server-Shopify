@@ -11,9 +11,6 @@ export const stateValidationSchema = Joi.object({
     "any.required": "Country ID is required",
   }),
   code: Joi.string().optional(),
-  icon: Joi.string().uri().optional().messages({
-    "string.uri": "Icon must be a valid URL",
-  }),
 });
 
 // Create a new state
@@ -43,7 +40,7 @@ export const createState = async (req, res) => {
 // Get all states
 export const getStates = async (req, res) => {
   try {
-    const states = await State.find().populate("country");
+    const states = await State.find().populate("country", "name");
     res.status(200).json(states);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -89,7 +86,9 @@ export const updateState = async (req, res) => {
 // Delete a state
 export const deleteState = async (req, res) => {
   try {
-    const state = await State.findByIdAndDelete(req.params.id);
+    const state = await State.findByIdAndUpdate(req.params.id, {
+      isActive: false,
+    });
     if (!state) return res.status(404).json({ message: "State not found" });
     res.status(200).json({ message: "State deleted successfully" });
   } catch (error) {

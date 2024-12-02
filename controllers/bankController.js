@@ -10,9 +10,6 @@ export const bankValidationSchema = Joi.object({
     "string.empty": "Country ID is required",
     "any.required": "Country ID is required",
   }),
-  icon: Joi.string().uri().optional().messages({
-    "string.uri": "Icon must be a valid URL",
-  }),
 });
 
 // Create a new bank
@@ -42,7 +39,7 @@ export const createBank = async (req, res) => {
 // Get all banks
 export const getBanks = async (req, res) => {
   try {
-    const banks = await Bank.find().populate("country");
+    const banks = await Bank.find().populate("country", "name");
     res.status(200).json(banks);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -88,7 +85,9 @@ export const updateBank = async (req, res) => {
 // Delete a bank
 export const deleteBank = async (req, res) => {
   try {
-    const bank = await Bank.findByIdAndDelete(req.params.id);
+    const bank = await Bank.findByIdAndUpdate(req.params.id, {
+      isActive: false,
+    });
     if (!bank) return res.status(404).json({ message: "Bank not found" });
     res.status(200).json({ message: "Bank deleted successfully" });
   } catch (error) {

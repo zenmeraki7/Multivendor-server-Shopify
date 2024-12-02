@@ -110,7 +110,9 @@ export const deleteSubcategory = async (req, res) => {
 // Get All Subcategories
 export const getAllSubcategories = async (req, res) => {
   try {
-    const subcategories = await Subcategory.find().populate("category", "name"); // Populate category name
+    const subcategories = await Subcategory.find()
+      .populate("category", "name")
+      .populate("categoryType", "name"); // Populate category name
     res.status(200).json({ subcategories });
   } catch (err) {
     res

@@ -10,9 +10,6 @@ export const countryValidationSchema = Joi.object({
     "string.empty": "Country code is required",
     "any.required": "Country code is required",
   }),
-  icon: Joi.string().uri().optional().messages({
-    "string.uri": "Icon must be a valid URL",
-  }),
 });
 
 // Create a new country
@@ -88,7 +85,9 @@ export const updateCountry = async (req, res) => {
 // Delete a country
 export const deleteCountry = async (req, res) => {
   try {
-    const country = await Country.findByIdAndDelete(req.params.id);
+    const country = await Country.findByIdAndUpdate(req.params.id, {
+      isActive: false,
+    });
     if (!country) return res.status(404).json({ message: "Country not found" });
     res.status(200).json({ message: "Country deleted successfully" });
   } catch (error) {
