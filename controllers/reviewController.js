@@ -5,6 +5,7 @@ import Joi from "joi";
 const reviewValidationSchema = Joi.object({
   rating: Joi.number().min(1).max(5).required(),
   comment: Joi.string().required(),
+  productId: Joi.string().required(),
   images: Joi.array()
     .items(
       Joi.object({
@@ -63,7 +64,7 @@ export const createReview = async (req, res) => {
     await newReview.save();
 
     // Update the product's rating
-    const reviews = await Review.find({ product: productId });
+    const reviews = await Review.find({ product: productId, isActive: true });
     const averageRating =
       reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
     product.rating.average = averageRating;
@@ -81,7 +82,7 @@ export const createReview = async (req, res) => {
 
 // Update an existing review
 export const updateReview = async (req, res) => {
-  const { reviewId, rating, comment, images } = req.body;
+  const { productId, rating, comment, images } = req.body;
   const userId = req.user.id; // Assuming the user is authenticated
 
   try {
@@ -98,7 +99,7 @@ export const updateReview = async (req, res) => {
       });
     }
     // Find the review
-    const review = await Review.findById(reviewId);
+    const review = await Review.findById(req.params.reviewId);
     if (!review) {
       return res.status(404).json({ message: "Review not found" });
     }
@@ -113,12 +114,12 @@ export const updateReview = async (req, res) => {
     // Update fields
     review.rating = rating || review.rating;
     review.comment = comment || review.comment;
-    review.images = images || review.images;
+    // review.images = images || review.images;
     await review.save();
 
     // Update the product's average rating
     const product = await Product.findById(review.product);
-    const reviews = await Review.find({ product: product._id });
+    const reviews = await Review.find({ product: product._id, isActive: true });
     const averageRating =
       reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
     product.rating.average = averageRating;
@@ -151,15 +152,15 @@ export const deleteReview = async (req, res) => {
     }
 
     // Delete the review
-    await review.remove();
+    await Review.findByIdAndUpdate(reviewId, { isActive: false });
 
     // Update the product's average rating
     const product = await Product.findById(review.product);
-    const reviews = await Review.find({ product: product._id });
+    const reviews = await Review.find({ product: product._id, isActive: true });
     const averageRating =
-      reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
-    product.rating.average = averageRating;
-    product.rating.count = reviews.length;
+      reviews?.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
+    product.rating.average = averageRating || 0;
+    product.rating.count = reviews.length || 0;
     await product.save();
 
     res.status(200).json({ message: "Review deleted successfully" });
@@ -177,7 +178,7 @@ export const getReviewsForProduct = async (req, res) => {
     // Find reviews for the product
     const reviews = await Review.find({ product: productId }).populate(
       "user",
-      "name"
+      "email"
     );
     if (!reviews.length) {
       return res

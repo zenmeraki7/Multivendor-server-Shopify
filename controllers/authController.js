@@ -7,7 +7,7 @@ import Joi from "joi";
 
 // Joi Schemas
 const registerSchema = Joi.object({
-  name: Joi.string().min(3).max(30).required().messages({
+  fullName: Joi.string().min(3).max(30).required().messages({
     "string.empty": "Name is required.",
     "string.min": "Name must be at least 3 characters long.",
     "string.max": "Name must not exceed 30 characters.",
@@ -47,7 +47,7 @@ const resetPasswordSchema = Joi.object({
 });
 
 export const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  const { fullName, email, password } = req.body;
 
   // Validate Input
   const { error } = registerSchema.validate(req.body, { abortEarly: false });
@@ -63,7 +63,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   // Hash Password and Save User
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await User.create({ name, email, password: hashedPassword });
+  const user = await User.create({ fullName, email, password: hashedPassword });
 
   // Send Verification Email
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {

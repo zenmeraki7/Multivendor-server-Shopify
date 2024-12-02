@@ -60,7 +60,7 @@ const productSchema = new mongoose.Schema(
       average: { type: Number, default: 0 }, // Average rating
       count: { type: Number, default: 0 }, // Total number of ratings
     },
-    reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }], // Array of review IDs
+    // reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }], // Array of review IDs
     tags: [{ type: String }], // Search tags (e.g., "smartphone", "android")
     shippingDetails: {
       weight: { type: Number }, // Weight in kilograms

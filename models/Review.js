@@ -12,11 +12,11 @@ const reviewSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     }, // Reference to the product
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Reference to the user
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "Users", required: true }, // Reference to the user
     rating: { type: Number, required: true, min: 1, max: 5 }, // Rating (1-5)
     comment: { type: String }, // User's review
     images: [imageSchema], // Optional: Images related to the review
-    createdAt: { type: Date, default: Date.now }, // Review creation time
+    isActive: { type: Boolean, default: true }, // Whether the category is active
   },
   { timestamps: true }
 );

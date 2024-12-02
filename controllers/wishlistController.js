@@ -35,7 +35,7 @@ export const addToWishlist = async (req, res) => {
   const { productId, variant } = req.body;
 
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     let wishlist = await Wishlist.findOne({ user: userId });
 
@@ -86,7 +86,7 @@ export const removeFromWishlist = async (req, res) => {
   const { productId, variant } = req.body;
 
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const wishlist = await Wishlist.findOne({ user: userId });
     if (!wishlist) {
@@ -115,10 +115,10 @@ export const removeFromWishlist = async (req, res) => {
 
 export const getWishlist = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const wishlist = await Wishlist.findOne({ user: userId }).populate(
-      "products.product"
+      "products.product","title price thumbnail"
     );
     if (!wishlist) {
       return res.status(404).json({ message: "Wishlist not found" });
@@ -134,7 +134,7 @@ export const getWishlist = async (req, res) => {
 
 export const clearWishlist = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const wishlist = await Wishlist.findOne({ user: userId });
     if (!wishlist) {
