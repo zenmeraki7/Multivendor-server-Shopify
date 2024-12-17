@@ -21,6 +21,7 @@ dotenv.config();
 connectDB();
 
 const app = express();
+
 app.use(express.json());
 // Specify the frontend URL in the CORS configuration
 const corsOptions = {
