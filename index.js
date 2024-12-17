@@ -22,7 +22,15 @@ connectDB();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+// Specify the frontend URL in the CORS configuration
+const corsOptions = {
+  origin:
+    "https://multi-vendor-frontend-e2n98mzfc-zenmeraki7s-projects.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE"], // Adjust based on your needs
+  credentials: true, // If you're using cookies or other credentials
+};
+
+app.use(cors(corsOptions));
 
 // Log all API calls
 app.use(logMiddleware);
