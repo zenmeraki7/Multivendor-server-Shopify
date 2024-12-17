@@ -61,6 +61,14 @@ export const registerUser = asyncHandler(async (req, res) => {
     });
   }
 
+  // Check if User Already Exists
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    return res.status(400).json({
+      message: "User already exists with this email address.",
+    });
+  }
+
   // Hash Password and Save User
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = await User.create({ fullName, email, password: hashedPassword });
@@ -69,7 +77,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
     expiresIn: "1d",
   });
-  const verificationUrl = `${process.env.CLIENT_URL}/verify/${token}`;
+  const verificationUrl = `${process.env.CLIENT_URL}/verify?token=${token}`;
   await sendEmail(
     email,
     "Verify Your Email",
@@ -80,6 +88,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     .status(201)
     .json({ message: "User registered. Check your email for verification." });
 });
+
 
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
