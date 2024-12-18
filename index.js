@@ -26,7 +26,7 @@ app.use(express.json());
 // Specify the frontend URL in the CORS configuration
 const corsOptions = {
   origin:
-    "https://multi-vendor-frontend-e2n98mzfc-zenmeraki7s-projects.vercel.app",
+    "https://multi-vendor-frontend-lyart.vercel.app",
   methods: ["GET", "POST", "PUT", "DELETE"], // Adjust based on your needs
   credentials: true, // If you're using cookies or other credentials
 };
