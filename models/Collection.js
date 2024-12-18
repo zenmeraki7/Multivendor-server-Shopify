@@ -10,11 +10,14 @@ const collectionSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    bannerUrl: {
+      type: String,
+    },
     products: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Product", // Reference to the Product model
-        required: true,
+        // required: true,
       },
     ],
     isActive: {

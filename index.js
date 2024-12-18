@@ -31,7 +31,7 @@ const corsOptions = {
   credentials: true, // If you're using cookies or other credentials
 };
 
-app.use(cors(corsOptions));
+app.use(cors());
 
 // Log all API calls
 app.use(logMiddleware);
