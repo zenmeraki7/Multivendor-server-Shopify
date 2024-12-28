@@ -23,10 +23,10 @@ const vendorRegistrationSchema = Joi.object({
   address: Joi.string().required().messages({
     "any.required": "Address is required.",
   }),
-  //   zipCode: Joi.number().positive().required().messages({
-  //     "number.base": "Zip code must be a valid number.",
-  //     "any.required": "Zip code is required.",
-  //   }),
+  zipCode: Joi.number().positive().required().messages({
+    "number.base": "Zip code must be a valid number.",
+    "any.required": "Zip code is required.",
+  }),
   city: Joi.string().required().messages({
     "any.required": "City is required.",
   }),
@@ -57,20 +57,27 @@ const vendorRegistrationSchema = Joi.object({
   }),
 });
 
-// Define Joi validation schema for both PAN and GSTIN
 const documentDetailsSchema = Joi.object({
-  documentType: Joi.string()
-    .valid("PAN", "GSTIN") // Enum values for document types
+  panNumber: Joi.string()
+    .pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/) // PAN format: AAAAA1234A
     .required()
     .messages({
-      "any.only": "Document type must be one of: PAN Card, GSIT",
-      "any.required": "Document type is required.",
+      "string.empty": "PAN number is required.",
+      "any.required": "PAN number is required.",
+      "string.pattern.base": "Invalid PAN number format.",
     }),
-  documentNumber: Joi.string().required().messages({
-    "string.empty": "Document number is required.",
-    "any.required": "Document number is required.",
-  }),
+  gstinNumber: Joi.string()
+    .pattern(
+      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9]{1}[A-Z]{1}[Z]{1}[0-9A-Z]{1}$/
+    ) // GSTIN format
+    .required()
+    .messages({
+      "string.empty": "GSTIN number is required.",
+      "any.required": "GSTIN number is required.",
+      "string.pattern.base": "Invalid GSTIN number format.",
+    }),
 });
+
 // Define Joi validation schema for both PAN and GSTIN
 const bankDetailsSchema = Joi.object({
   accountHolderName: Joi.string().required().messages({

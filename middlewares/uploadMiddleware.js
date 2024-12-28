@@ -35,7 +35,8 @@ export const uploadImages = upload.fields([
   { name: "thumbnail", maxCount: 1 }, // For thumbnail
   { name: "images", maxCount: 5 }, // For product images
   { name: "companyIcon", maxCount: 1 }, // For product images
-  { name: "document", maxCount: 1 }, // For product images
+  { name: "PAN", maxCount: 1 }, // For product images
+  { name: "GSTIN", maxCount: 1 }, // For product images
   { name: "image", maxCount: 1 }, // For product images
 ]);
 
@@ -60,41 +61,46 @@ const uploadToCloudinary = (filePath) => {
 export const handleImageUpload = async (req, res, next) => {
   try {
     // if (req.files) {
-      const uploadedImagesUrls = [];
-      // console.log(req.files);
-      // Handle the thumbnail upload
-      if (req.files?.thumbnail) {
-        const thumbnail = req.files.thumbnail[0];
-        const cloudinaryResult = await uploadToCloudinary(thumbnail.path);
-        req.thumbnailUrl = cloudinaryResult.secure_url;
-      }
-      if (req.files?.companyIcon) {
-        const companyIcon = req.files.companyIcon[0];
-        const cloudinaryResult = await uploadToCloudinary(companyIcon.path);
-        req.companyIconUrl = cloudinaryResult.secure_url;
-      }
-      if (req.files?.image) {
-        const image = req.files.image[0];
+    const uploadedImagesUrls = [];
+    // console.log(req.files);
+    // Handle the thumbnail upload
+    if (req.files?.thumbnail) {
+      const thumbnail = req.files.thumbnail[0];
+      const cloudinaryResult = await uploadToCloudinary(thumbnail.path);
+      req.thumbnailUrl = cloudinaryResult.secure_url;
+    }
+    if (req.files?.companyIcon) {
+      const companyIcon = req.files.companyIcon[0];
+      const cloudinaryResult = await uploadToCloudinary(companyIcon.path);
+      req.companyIconUrl = cloudinaryResult.secure_url;
+    }
+    if (req.files?.image) {
+      const image = req.files.image[0];
+      const cloudinaryResult = await uploadToCloudinary(image.path);
+      req.image = cloudinaryResult.secure_url;
+    }
+    if (req.files?.PAN && req.files?.GSTIN) {
+      const PANdocument = req.files.PAN[0];
+      const GSTINdocument = req.files.GSTIN[0];
+      const cloudinaryResultPAN = await uploadToCloudinary(PANdocument.path);
+      const cloudinaryResultGSTIN = await uploadToCloudinary(
+        GSTINdocument.path
+      );
+      req.PAN_URL = cloudinaryResultPAN.secure_url;
+      req.GSTIN_URL = cloudinaryResultGSTIN.secure_url;
+    }
+    // Handle the product images upload
+    if (req.files?.images) {
+      for (let image of req.files.images) {
         const cloudinaryResult = await uploadToCloudinary(image.path);
-        req.image = cloudinaryResult.secure_url;
+        uploadedImagesUrls.push({
+          url: cloudinaryResult.secure_url,
+          public_id: cloudinaryResult.public_id,
+        });
       }
-      if (req.files?.document) {
-        const document = req.files.document[0];
-        const cloudinaryResult = await uploadToCloudinary(document.path);
-        req.documentURL = cloudinaryResult.secure_url;
-      }
-      // Handle the product images upload
-      if (req.files?.images) {
-        for (let image of req.files.images) {
-          const cloudinaryResult = await uploadToCloudinary(image.path);
-          uploadedImagesUrls.push({
-            url: cloudinaryResult.secure_url,
-            public_id: cloudinaryResult.public_id,
-          });
-        }
-        req.uploadedImages = uploadedImagesUrls;
-      }
-      next(); // Proceed to the next middleware or route handler
+      req.uploadedImages = uploadedImagesUrls;
+    }
+    next(); // Proceed to the next middleware or route handler
     // } else {
     //   res.status(400).json({ message: "No files uploaded" });
     // }

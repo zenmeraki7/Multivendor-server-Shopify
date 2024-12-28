@@ -14,11 +14,11 @@ const vendorApprovalSchema = Joi.object({
 
 // Create Vendor Account
 export const createVendor = async (req, res) => {
-  if (!req.companyIconUrl) {
-    return res.status(400).json({
-      message: "companyIcon is required",
-    });
-  }
+  // if (!req.companyIconUrl) {
+  //   return res.status(400).json({
+  //     message: "companyIcon is required",
+  //   });
+  // }
   try {
     const { email, password, phoneNum } = req.body;
     // Check if vendor with the email or phone number already exists
@@ -34,24 +34,24 @@ export const createVendor = async (req, res) => {
     // Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
     req.body.password = hashedPassword;
-    req.body.companyIcon = req.companyIconUrl;
-    req.body.zipCode = 123456;
+    // req.body.companyIcon = req.companyIconUrl;
+    // req.body.zipCode = 123456;
     const vendor = new Vendor(req.body);
 
     await vendor.save();
 
-    // Generate Verification Token
-    const token = jwt.sign({ id: vendor._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    // // Generate Verification Token
+    // const token = jwt.sign({ id: vendor._id }, process.env.JWT_SECRET, {
+    //   expiresIn: "1d",
+    // });
 
-    // Send Verification Email
-    const verificationUrl = `${process.env.CLIENT_URL}/verify-vendor/${token}`;
-    await sendEmail(
-      email,
-      "Verify Your Vendor Account",
-      `Please verify your email address by clicking the link below:\n\n${verificationUrl}`
-    );
+    // // Send Verification Email
+    // const verificationUrl = `${process.env.CLIENT_SELLER_URL}/verify-vendor/${token}`;
+    // await sendEmail(
+    //   email,
+    //   "Verify Your Vendor Account",
+    //   `Please verify your email address by clicking the link below:\n\n${verificationUrl}`
+    // );
 
     res.status(201).json({
       message: "Check your email for verification.",
@@ -112,25 +112,45 @@ export const verifyVendor = async (req, res) => {
 
 // Controller to update document details
 export const updateDocumentDetails = async (req, res) => {
-  if (!req.documentURL) {
-    return res.status(404).json({ message: "document image required" });
+  // Check if both document URLs (PAN and GSTIN) are provided
+  if (!req.PAN_URL || !req.GSTIN_URL) {
+    return res.status(404).json({ message: "Some document image is missing" });
   }
 
   try {
-    // Find vendor and update PAN details
+    // Find vendor by ID
     const vendor = await Vendor.findById(req.params.vendorId);
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });
     }
 
-    vendor[req.body.documentType] = {
-      documentNumber: req.body.documentNumber,
-      documentUrl: req.documentURL,
-    };
+    // Ensure document type is either PAN or GSTIN
+    const { documentType, documentNumber } = req.body;
+    if (documentType !== "PAN" && documentType !== "GSTIN") {
+      return res.status(400).json({
+        message: "Document type must be either 'PAN' or 'GSTIN'",
+      });
+    }
 
+    // Update the appropriate document field based on documentType
+    if (documentType === "PAN") {
+      vendor.PAN = {
+        documentNumber: documentNumber,
+        documentUrl: req.PAN_URL,
+      };
+    } else if (documentType === "GSTIN") {
+      vendor.GSTIN = {
+        documentNumber: documentNumber,
+        documentUrl: req.GSTIN_URL,
+      };
+    }
+
+    // Save updated vendor details
     await vendor.save();
+
+    // Return success response
     return res.status(200).json({
-      message: `${req.body.documentType} details updated successfully`,
+      message: `${documentType} details updated successfully`,
       vendor,
     });
   } catch (error) {
@@ -253,6 +273,7 @@ export const getVendorById = async (req, res) => {
   }
 };
 
+// Approve Vendor and Send Verification Email
 export const approveVendor = async (req, res) => {
   try {
     const { id } = req.params;
@@ -263,6 +284,7 @@ export const approveVendor = async (req, res) => {
       return res.status(404).json({ message: "Vendor not found." });
     }
 
+    // Set the vendor as verified after admin approval
     vendor.isVerified = true;
     vendor.isKycVerified = true;
     vendor.PAN.verified = true;
@@ -271,30 +293,36 @@ export const approveVendor = async (req, res) => {
     vendor.verificationRemarks = verificationRemarks || "Approved by admin.";
     await vendor.save();
 
+    // Create notification for the vendor
     await Notification.create({
       title: "Account Approved",
       message: `Your vendor account "${vendor.companyName}" has been approved.`,
       type: "Vendor",
       vendorId: vendor._id,
-      link: `/vendor/dashboard`, // Example link to the vendor dashboard
+      link: `/vendor/dashboard`, // Link to the vendor dashboard
       to: vendor._id,
     });
 
-    // Send approval email
+    // Generate Verification Token
+    const token = jwt.sign({ id: vendor._id }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
+    // Send Verification Email
+    const verificationUrl = `${process.env.CLIENT_SELLER_URL}/verify-vendor/${token}`;
     await sendEmail(
       vendor.email,
-      "Vendor Account Approved",
-      `Dear ${vendor.fullName},\n\nYour vendor account "${vendor.companyName}" has been approved by the admin. You can now access your vendor dashboard and start listing your products.\n\nThank you,\nTeam`
+      "Vendor Account Verified",
+      `Dear ${vendor.fullName},\n\nYour vendor account "${vendor.companyName}" has been verified by the admin. Please click the link below to activate your account:\n\n${verificationUrl}\n\nThank you,\nTeam`
     );
 
-    res.status(200).json({ message: "Vendor approved successfully." });
+    res.status(200).json({ message: "Vendor approved successfully and verification email sent." });
   } catch (error) {
     res
       .status(500)
       .json({ message: "Error approving vendor.", error: error.message });
   }
 };
-
 export const rejectVendor = async (req, res) => {
   try {
     const { id } = req.params;

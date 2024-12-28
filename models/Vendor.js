@@ -78,7 +78,7 @@ const vendorSchema = new mongoose.Schema(
     },
     companyIcon: {
       type: String,
-      required: true,
+      // required: true,
     },
     website: {
       type: String,
