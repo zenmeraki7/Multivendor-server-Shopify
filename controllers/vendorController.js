@@ -54,7 +54,7 @@ export const createVendor = async (req, res) => {
     // );
 
     res.status(201).json({
-      message: "Check your email for verification.",
+      message: "Please wait for admin approval. Add other details like bank and documents",
     });
   } catch (error) {
     res.status(500).json({
