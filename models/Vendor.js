@@ -86,11 +86,9 @@ const vendorSchema = new mongoose.Schema(
     PAN: {
       documentNumber: {
         type: String,
-        required: true, // GST number, PAN number, etc.
       },
       documentUrl: {
         type: String,
-        required: true, // URL for the uploaded document
       },
       verified: {
         type: Boolean,
@@ -100,29 +98,31 @@ const vendorSchema = new mongoose.Schema(
     GSTIN: {
       documentNumber: {
         type: String,
-        required: true, // GST number, PAN number, etc.
       },
       documentUrl: {
         type: String,
-        required: true, // URL for the uploaded document
       },
       verified: {
         type: Boolean,
         default: false, // Verification status for the document
       },
     }, // Consolidated for all document types
-    isKycVerified: {
-      type: Boolean,
-      default: false, // Overall KYC verification status
+    KycProvidedDetails: {
+      type: Object,
+      default: {
+        personalDetails: false, // Status for personalDetails details provided
+        PAN: false, // Status for PAN details provided
+        GSTIN: false, // Status for GSTIN details provided
+        bankDetails: false, // Status for bank details provided
+      },
     },
     bankDetails: {
-      accountHolderName: { type: String, required: true },
-      accountNumber: { type: String, required: true },
-      ifscCode: { type: String, required: true },
-      bankName: { type: String, required: true },
+      accountHolderName: { type: String },
+      accountNumber: { type: String },
+      ifscCode: { type: String },
+      bankName: { type: mongoose.Schema.Types.ObjectId, ref: "Bank" },
       documentUrl: {
         type: String,
-        required: true, // URL for the uploaded bank-related document (e.g., canceled cheque)
       },
       isVerified: { type: Boolean, default: false }, // Verification status for bank details
     },

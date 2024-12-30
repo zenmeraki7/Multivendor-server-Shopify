@@ -36,7 +36,7 @@ router.post(
 );
 
 //Verify Vendor account
-router.get("/verify-vendor/:token", verifyVendor);
+router.post("/verify-vendor", verifyVendor);
 
 // Vendor login
 router.post("/login", loginVendor);

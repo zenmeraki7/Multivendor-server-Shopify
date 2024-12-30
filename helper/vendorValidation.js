@@ -67,9 +67,7 @@ const documentDetailsSchema = Joi.object({
       "string.pattern.base": "Invalid PAN number format.",
     }),
   gstinNumber: Joi.string()
-    .pattern(
-      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9]{1}[A-Z]{1}[Z]{1}[0-9A-Z]{1}$/
-    ) // GSTIN format
+    .pattern(/^[A-Z0-9]{15}$/) // GSTIN format: 15 characters (letters and digits)
     .required()
     .messages({
       "string.empty": "GSTIN number is required.",

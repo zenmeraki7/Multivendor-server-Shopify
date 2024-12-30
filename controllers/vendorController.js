@@ -4,6 +4,7 @@ import Joi from "joi";
 import Notification from "../models/Notification.js";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../utils/sendEmail.js";
+import Otp from "../models/Otp.js";
 
 // Approve/Reject Vendor Schema
 const vendorApprovalSchema = Joi.object({
@@ -14,13 +15,9 @@ const vendorApprovalSchema = Joi.object({
 
 // Create Vendor Account
 export const createVendor = async (req, res) => {
-  // if (!req.companyIconUrl) {
-  //   return res.status(400).json({
-  //     message: "companyIcon is required",
-  //   });
-  // }
   try {
     const { email, password, phoneNum } = req.body;
+
     // Check if vendor with the email or phone number already exists
     const existingVendor = await Vendor.findOne({
       $or: [{ email }, { phoneNum }],
@@ -34,27 +31,33 @@ export const createVendor = async (req, res) => {
     // Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
     req.body.password = hashedPassword;
-    // req.body.companyIcon = req.companyIconUrl;
-    // req.body.zipCode = 123456;
-    const vendor = new Vendor(req.body);
 
+    const vendor = new Vendor(req.body);
+    vendor.KycProvidedDetails.personalDetails = true;
     await vendor.save();
 
-    // // Generate Verification Token
-    // const token = jwt.sign({ id: vendor._id }, process.env.JWT_SECRET, {
-    //   expiresIn: "1d",
-    // });
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiration = Date.now() + 10 * 60 * 1000; // Valid for 10 minutes
 
-    // // Send Verification Email
-    // const verificationUrl = `${process.env.CLIENT_SELLER_URL}/verify-vendor/${token}`;
-    // await sendEmail(
-    //   email,
-    //   "Verify Your Vendor Account",
-    //   `Please verify your email address by clicking the link below:\n\n${verificationUrl}`
-    // );
+    // Save OTP to the OTP collection
+    const newOtp = new Otp({
+      email,
+      otp,
+      expiresAt: otpExpiration,
+    });
+    await newOtp.save();
+
+    // Send OTP Email
+    await sendEmail(
+      email,
+      "Verify Your Vendor Account",
+      `Your OTP for email verification is: ${otp}`
+    );
 
     res.status(201).json({
-      message: "Please wait for admin approval. Add other details like bank and documents",
+      message:
+        "Please wait for admin approval. Add other details like bank and documents. An OTP has been sent to your email for verification.",
     });
   } catch (error) {
     res.status(500).json({
@@ -65,21 +68,32 @@ export const createVendor = async (req, res) => {
 };
 
 export const verifyVendor = async (req, res) => {
-  const { token } = req.params;
+  const { email, otp } = req.body; // Use email and OTP for verification
 
   try {
-    if (!token) {
-      return res
-        .status(403)
-        .json({ message: "Verification token is missing." });
+    // Validate input
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required." });
     }
 
-    // Decode the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Find the OTP record for the given email and OTP
+    const otpRecord = await Otp.findOne({ email, otp });
 
-    // Find the vendor and update their verification status
-    const vendor = await Vendor.findByIdAndUpdate(
-      decoded.id,
+    if (!otpRecord) {
+      return res.status(400).json({ message: "Invalid OTP." });
+    }
+
+    // Check if OTP has expired
+    if (otpRecord.expiresAt < Date.now()) {
+      return res.status(400).json({ message: "OTP has expired." });
+    }
+
+    // Delete the OTP document after successful verification
+    await Otp.deleteOne({ _id: otpRecord._id });
+
+    // Update the vendor's email verification status
+    const vendor = await Vendor.findOneAndUpdate(
+      { email },
       { isEmailVerified: true },
       { new: true }
     ).select("-password");
@@ -87,6 +101,13 @@ export const verifyVendor = async (req, res) => {
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found." });
     }
+
+    // Generate JWT Token
+    const token = jwt.sign(
+      { id: vendor._id, email: vendor.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" } // Token expiration time
+    );
 
     // Create a notification for the admin
     await Notification.create({
@@ -100,11 +121,13 @@ export const verifyVendor = async (req, res) => {
 
     res.status(200).json({
       message:
-        "Vendor email verified successfully.Please wait for admin approval.",
+        "Vendor email verified successfully. Please wait for admin approval.",
+      token, // Send the token in the response
+      user: vendor,
     });
   } catch (error) {
-    res.status(400).json({
-      message: "Invalid or expired token.",
+    res.status(500).json({
+      message: "Error verifying vendor.",
       error: error.message,
     });
   }
@@ -114,54 +137,63 @@ export const verifyVendor = async (req, res) => {
 export const updateDocumentDetails = async (req, res) => {
   // Check if both document URLs (PAN and GSTIN) are provided
   if (!req.PAN_URL || !req.GSTIN_URL) {
-    return res.status(404).json({ message: "Some document image is missing" });
+    return res
+      .status(400)
+      .json({ message: "PAN or GSTIN document image is missing." });
   }
 
   try {
     // Find vendor by ID
     const vendor = await Vendor.findById(req.params.vendorId);
     if (!vendor) {
-      return res.status(404).json({ message: "Vendor not found" });
+      return res.status(404).json({ message: "Vendor not found." });
     }
 
-    // Ensure document type is either PAN or GSTIN
-    const { documentType, documentNumber } = req.body;
-    if (documentType !== "PAN" && documentType !== "GSTIN") {
-      return res.status(400).json({
-        message: "Document type must be either 'PAN' or 'GSTIN'",
-      });
-    }
+    const { panNumber, gstinNumber } = req.body;
 
-    // Update the appropriate document field based on documentType
-    if (documentType === "PAN") {
+    // Update PAN details if provided
+    if (panNumber) {
       vendor.PAN = {
-        documentNumber: documentNumber,
+        documentNumber: panNumber,
         documentUrl: req.PAN_URL,
       };
-    } else if (documentType === "GSTIN") {
+      // Update KycProvidedDetails for PAN
+      vendor.KycProvidedDetails.PAN = true;
+    }
+
+    // Update GSTIN details if provided
+    if (gstinNumber) {
       vendor.GSTIN = {
-        documentNumber: documentNumber,
+        documentNumber: gstinNumber,
         documentUrl: req.GSTIN_URL,
       };
+      // Update KycProvidedDetails for GSTIN
+      vendor.KycProvidedDetails.GSTIN = true;
     }
 
     // Save updated vendor details
-    await vendor.save();
-
+    const updatedData = await Vendor.findByIdAndUpdate(
+      req.params.vendorId,
+      {
+        $set: vendor,
+      },
+      { new: true }
+    );
+    console.log(updatedData);
     // Return success response
     return res.status(200).json({
-      message: `${documentType} details updated successfully`,
-      vendor,
+      message: "PAN and GSTIN details updated successfully.",
+      vendor: updatedData,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error("Error updating document details:", error);
+    return res.status(500).json({ message: "Internal server error." });
   }
 };
 
 // Controller to update bank details
 export const updateBankDetails = async (req, res) => {
-  if (!req.documentURL) {
+  if (!req.image) {
     return res.status(404).json({ message: "document image required" });
   }
   const { accountHolderName, accountNumber, ifscCode, bankName } = req.body;
@@ -178,12 +210,24 @@ export const updateBankDetails = async (req, res) => {
       accountNumber,
       ifscCode,
       bankName,
-      documentUrl: req.documentURL,
+      documentUrl: req.image,
     };
-    await vendor.save();
+    vendor.KycProvidedDetails.bankDetails = true;
+    // Save updated vendor details
+    const updatedData = await Vendor.findByIdAndUpdate(
+      req.params.vendorId,
+      {
+        $set: vendor,
+      },
+      { new: true }
+    );
+    console.log(updatedData);
     return res
       .status(200)
-      .json({ message: "Bank details updated successfully", vendor });
+      .json({
+        message: "Bank details updated successfully",
+        vendor: updatedData,
+      });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
@@ -286,7 +330,7 @@ export const approveVendor = async (req, res) => {
 
     // Set the vendor as verified after admin approval
     vendor.isVerified = true;
-    vendor.isKycVerified = true;
+    // vendor.isKycVerified = true;
     vendor.PAN.verified = true;
     vendor.GSTIN.verified = true;
     vendor.bankDetails.isVerified = true;
@@ -316,7 +360,9 @@ export const approveVendor = async (req, res) => {
       `Dear ${vendor.fullName},\n\nYour vendor account "${vendor.companyName}" has been verified by the admin. Please click the link below to activate your account:\n\n${verificationUrl}\n\nThank you,\nTeam`
     );
 
-    res.status(200).json({ message: "Vendor approved successfully and verification email sent." });
+    res.status(200).json({
+      message: "Vendor approved successfully and verification email sent.",
+    });
   } catch (error) {
     res
       .status(500)
