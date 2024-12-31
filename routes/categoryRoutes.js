@@ -4,7 +4,7 @@ import {
   updateCategory,
   deleteCategory,
   getAllCategories,
-  getAllCategoriesbyCatType,
+  getAllActiveCategories,
 } from "../controllers/categoryController.js";
 import {
   authenticateAdmin,
@@ -23,9 +23,9 @@ router.put("/update/:id", authenticateAdmin, updateCategory);
 router.delete("/delete/:id", authenticateAdmin, deleteCategory);
 
 // Get all categories
-router.get("/all", authentication, getAllCategories);
+router.get("/admin-all", authenticateAdmin, getAllCategories);
 
-// Get all categories
-router.get("/by-category-type/:id", authentication, getAllCategoriesbyCatType);
+// Get all active categories
+router.get("/all", getAllActiveCategories);
 
 export default router;

@@ -112,13 +112,31 @@ export const getAllCategories = async (req, res) => {
 };
 
 // Get All Categories
-export const getAllCategoriesbyCatType = async (req, res) => {
+export const getAllActiveCategories = async (req, res) => {
   try {
-    const categories = await Category.find({
-      categoryType: req.params.id,
-    }).populate("categoryType", "name");
-
-    res.status(200).json({ data: categories });
+    if (req.query.id) {
+      const categories = await Category.find({
+        categoryType: req.query.id,
+        isActive: true,
+      }).populate("categoryType", "name");
+      res.status(200).json({
+        success: true,
+        message: "categories fetched succussfully",
+        data: categories,
+      });
+    } else {
+      const categories = await Category.find({ isActive: true }).populate(
+        "categoryType",
+        "name"
+      );
+      res
+        .status(200)
+        .json({
+          success: true,
+          message: "categories fetched succussfully",
+          data: categories,
+        });
+    }
   } catch (err) {
     res
       .status(500)

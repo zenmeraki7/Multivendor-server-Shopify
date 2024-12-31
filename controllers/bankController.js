@@ -49,11 +49,19 @@ export const getBanks = async (req, res) => {
 // Get all active banks
 export const getActiveBanks = async (req, res) => {
   try {
-    const banks = await Bank.find({ isActive: true }).populate(
-      "country",
-      "name"
-    );
-    res.status(200).json(banks);
+    if (req.query.id) {
+      const banks = await Bank.find({
+        isActive: true,
+        country: req.query.id,
+      }).populate("country", "name");
+      res.status(200).json(banks);
+    } else {
+      const banks = await Bank.find({ isActive: true }).populate(
+        "country",
+        "name"
+      );
+      res.status(200).json(banks);
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

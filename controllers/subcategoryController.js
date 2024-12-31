@@ -121,13 +121,33 @@ export const getAllSubcategories = async (req, res) => {
   }
 };
 
-// Get All Subcategories by category
-export const getAllSubcategoriesByCat = async (req, res) => {
+// Get All active Subcategories
+export const getAllActiveSubcategories = async (req, res) => {
   try {
-    const subcategories = await Subcategory.find({ category: req.params.id })
-      .populate("category", "name")
-      .populate("categoryType", "name"); // Populate category name
-    res.status(200).json({ data: subcategories });
+    if (req.query.id) {
+      const subcategories = await Subcategory.find({
+        category: req.query.id,
+        isActive: true,
+      })
+        .populate("category", "name")
+        .populate("categoryType", "name"); // Populate category name
+      res.status(200).json({
+        success: true,
+        message: "subcategories fetched successfully",
+        data: subcategories,
+      });
+    } else {
+      const subcategories = await Subcategory.find({ isActive: true })
+        .populate("category", "name")
+        .populate("categoryType", "name"); // Populate category name
+      res
+        .status(200)
+        .json({
+          success: true,
+          message: "subcategories fetched successfully",
+          data: subcategories,
+        });
+    }
   } catch (err) {
     res
       .status(500)
