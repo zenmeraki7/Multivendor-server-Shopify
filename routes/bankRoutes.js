@@ -5,6 +5,7 @@ import {
   getBankById,
   updateBank,
   deleteBank,
+  getActiveBanks,
 } from "../controllers/bankController.js";
 import { authenticateAdmin } from "../middlewares/jwtMiddleware.js";
 
