@@ -8,8 +8,8 @@ const productCreationSchema = Joi.object({
   thumbnailAltText: Joi.string().optional(),
   imagesAltText: Joi.array().optional(),
   subcategories: Joi.string().required(), // You may want to replace this with ObjectId validation if needed
-  // price: Joi.number().required().min(0),
-  // discountedPrice: Joi.number().required().min(0),
+  price: Joi.number().required().min(0),
+  discountedPrice: Joi.number().required().min(0),
   variants: Joi.array()
     .items(
       Joi.object({
@@ -45,8 +45,9 @@ const productCreationSchema = Joi.object({
   stock: Joi.number().min(0).default(0),
   tags: Joi.array().items(Joi.string()).optional(),
   shippingDetails: Joi.object({
-    weight: Joi.number().optional(),
+    weight: Joi.string().optional(),
     freeShipping: Joi.boolean().optional().default(false),
+    ShippingCharge: Joi.number().optional(),
   }).optional(),
   returnPolicy: Joi.object({
     isReturnable: Joi.boolean().default(false),

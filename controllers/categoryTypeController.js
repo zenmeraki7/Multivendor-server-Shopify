@@ -111,7 +111,7 @@ export const deleteCategoryType = async (req, res) => {
 export const getAllCategoriesTypes = async (req, res) => {
   try {
     const categories = await CategoryType.find();
-    res.status(200).json({ categories });
+    res.status(200).json({ data: categories });
   } catch (err) {
     res
       .status(500)

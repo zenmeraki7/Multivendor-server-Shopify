@@ -113,7 +113,21 @@ export const getAllSubcategories = async (req, res) => {
     const subcategories = await Subcategory.find()
       .populate("category", "name")
       .populate("categoryType", "name"); // Populate category name
-    res.status(200).json({ subcategories });
+    res.status(200).json({ data: subcategories });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error retrieving subcategories", error: err.message });
+  }
+};
+
+// Get All Subcategories by category
+export const getAllSubcategoriesByCat = async (req, res) => {
+  try {
+    const subcategories = await Subcategory.find({ category: req.params.id })
+      .populate("category", "name")
+      .populate("categoryType", "name"); // Populate category name
+    res.status(200).json({ data: subcategories });
   } catch (err) {
     res
       .status(500)

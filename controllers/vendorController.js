@@ -144,7 +144,7 @@ export const updateDocumentDetails = async (req, res) => {
 
   try {
     // Find vendor by ID
-    const vendor = await Vendor.findById(req.params.vendorId);
+    const vendor = await Vendor.findById(req.user.id);
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found." });
     }
@@ -173,17 +173,17 @@ export const updateDocumentDetails = async (req, res) => {
 
     // Save updated vendor details
     const updatedData = await Vendor.findByIdAndUpdate(
-      req.params.vendorId,
+      req.user.id,
       {
         $set: vendor,
       },
       { new: true }
-    );
+    ).select("-password");
     console.log(updatedData);
     // Return success response
     return res.status(200).json({
       message: "PAN and GSTIN details updated successfully.",
-      vendor: updatedData,
+      user: updatedData,
     });
   } catch (error) {
     console.error("Error updating document details:", error);
@@ -200,7 +200,7 @@ export const updateBankDetails = async (req, res) => {
 
   try {
     // Find vendor and update bank details
-    const vendor = await Vendor.findById(req.params.vendorId);
+    const vendor = await Vendor.findById(req.user.id);
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });
     }
@@ -215,7 +215,7 @@ export const updateBankDetails = async (req, res) => {
     vendor.KycProvidedDetails.bankDetails = true;
     // Save updated vendor details
     const updatedData = await Vendor.findByIdAndUpdate(
-      req.params.vendorId,
+      req.user.id,
       {
         $set: vendor,
       },
@@ -224,7 +224,7 @@ export const updateBankDetails = async (req, res) => {
     console.log(updatedData);
     return res.status(200).json({
       message: "Bank details updated successfully",
-      vendor: updatedData,
+      user: updatedData,
     });
   } catch (error) {
     console.error(error);
@@ -317,11 +317,18 @@ export const getVendorById = async (req, res) => {
 
 // Get Single Vendor by token
 export const getLoginedVendor = async (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Vendor data fetched successfully",
-    vendor: req.vendor,
-  });
+  try {
+    const vendor = await Vendor.findById(req.user.id).select("-password");
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found." });
+    }
+    res.status(200).json(vendor);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching vendor details.",
+      error: error.message,
+    });
+  }
 };
 
 // Approve Vendor and Send Verification Email

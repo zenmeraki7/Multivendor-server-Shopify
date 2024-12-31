@@ -63,8 +63,9 @@ const productSchema = new mongoose.Schema(
     // reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }], // Array of review IDs
     tags: [{ type: String }], // Search tags (e.g., "smartphone", "android")
     shippingDetails: {
-      weight: { type: Number }, // Weight in kilograms
+      weight: { type: String }, // Weight in kilograms
       freeShipping: { type: Boolean, default: false }, // Whether free shipping is available
+      ShippingCharge: { type: Number, default: 0 }, // Whether free shipping is available
     },
     returnPolicy: {
       isReturnable: { type: Boolean, default: false }, // Is the product returnable?

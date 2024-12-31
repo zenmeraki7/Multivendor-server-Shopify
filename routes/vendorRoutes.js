@@ -50,7 +50,7 @@ router.get("/all", authenticateAdmin, getAllVendors);
 router.get("/:id", authenticateAdmin, getVendorById);
 
 //views a single vendor by token
-router.get("/auth-token", authenticateVendor, getLoginedVendor);
+router.get("/auth-token", authentication, getLoginedVendor);
 
 // Admin approves a vendor
 router.put("/approve/:id", approveVendor);
@@ -60,7 +60,8 @@ router.put("/reject/:id", rejectVendor);
 
 // Route to update document details
 router.put(
-  "/add-document/:vendorId",
+  "/add-document",
+  authentication,
   uploadImages,
   validateAddDocument,
   handleImageUpload,
@@ -69,7 +70,8 @@ router.put(
 
 // Route to update bank details
 router.put(
-  "/add-bank/:vendorId",
+  "/add-bank",
+  authentication,
   uploadImages,
   validateAddBankDetails,
   handleImageUpload,

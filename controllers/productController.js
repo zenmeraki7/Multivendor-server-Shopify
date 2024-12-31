@@ -26,9 +26,9 @@ export const createProduct = async (req, res) => {
     if (!vendorId) {
       return res.status(404).json({ message: "Missing vendor id" });
     }
-    req.body.price = 999.0;
-    req.body.discountedPrice = 799.0;
-    req.body.stock = 50;
+    // req.body.price = 999.0;
+    // req.body.discountedPrice = 799.0;
+    // req.body.stock = 50;
     req.body.thumbnail = { url: req.thumbnailUrl };
     req.body.images = req.uploadedImages?.map((item, index) => {
       return {

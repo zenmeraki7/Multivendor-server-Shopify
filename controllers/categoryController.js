@@ -103,7 +103,22 @@ export const deleteCategory = async (req, res) => {
 export const getAllCategories = async (req, res) => {
   try {
     const categories = await Category.find().populate("categoryType", "name");
-    res.status(200).json({ categories });
+    res.status(200).json({ data: categories });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error retrieving categories", error: err.message });
+  }
+};
+
+// Get All Categories
+export const getAllCategoriesbyCatType = async (req, res) => {
+  try {
+    const categories = await Category.find({
+      categoryType: req.params.id,
+    }).populate("categoryType", "name");
+
+    res.status(200).json({ data: categories });
   } catch (err) {
     res
       .status(500)
