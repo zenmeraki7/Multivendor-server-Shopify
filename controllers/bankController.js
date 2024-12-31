@@ -46,6 +46,19 @@ export const getBanks = async (req, res) => {
   }
 };
 
+// Get all active banks
+export const getActiveBanks = async (req, res) => {
+  try {
+    const banks = await Bank.find({ isActive: true }).populate(
+      "country",
+      "name"
+    );
+    res.status(200).json(banks);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Get a single bank by ID
 export const getBankById = async (req, res) => {
   try {

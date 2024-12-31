@@ -46,6 +46,16 @@ export const getCountries = async (req, res) => {
   }
 };
 
+// Get all active countries
+export const getActiveCountries = async (req, res) => {
+  try {
+    const countries = await Country.find({ isActive: true });
+    res.status(200).json(countries);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Get a single country by ID
 export const getCountryById = async (req, res) => {
   try {
