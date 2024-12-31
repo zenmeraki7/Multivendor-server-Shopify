@@ -58,7 +58,7 @@ export const authenticateVendor = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log(decoded);
     // Check if vendor exists in the database
-    const vendor = await Vendor.findById(decoded.id);
+    const vendor = await Vendor.findById(decoded.id).select("-password");
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found." });
     }

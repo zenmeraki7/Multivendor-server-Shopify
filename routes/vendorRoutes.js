@@ -9,6 +9,7 @@ import {
   verifyVendor,
   updateBankDetails,
   updateDocumentDetails,
+  getLoginedVendor,
 } from "../controllers/vendorController.js";
 import {
   handleImageUpload,
@@ -21,6 +22,7 @@ import {
 } from "../helper/vendorValidation.js";
 import {
   authenticateAdmin,
+  authenticateVendor,
   authentication,
 } from "../middlewares/jwtMiddleware.js";
 
@@ -45,7 +47,10 @@ router.post("/login", loginVendor);
 router.get("/all", authenticateAdmin, getAllVendors);
 
 // Admin views a single vendor
-router.get("/:id", authentication, getVendorById);
+router.get("/:id", authenticateAdmin, getVendorById);
+
+//views a single vendor by token
+router.get("/auth-token", authenticateVendor, getLoginedVendor);
 
 // Admin approves a vendor
 router.put("/approve/:id", approveVendor);

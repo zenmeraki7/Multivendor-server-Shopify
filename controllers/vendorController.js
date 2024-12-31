@@ -222,12 +222,10 @@ export const updateBankDetails = async (req, res) => {
       { new: true }
     );
     console.log(updatedData);
-    return res
-      .status(200)
-      .json({
-        message: "Bank details updated successfully",
-        vendor: updatedData,
-      });
+    return res.status(200).json({
+      message: "Bank details updated successfully",
+      vendor: updatedData,
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
@@ -315,6 +313,15 @@ export const getVendorById = async (req, res) => {
       error: error.message,
     });
   }
+};
+
+// Get Single Vendor by token
+export const getLoginedVendor = async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Vendor data fetched successfully",
+    vendor: req.vendor,
+  });
 };
 
 // Approve Vendor and Send Verification Email
