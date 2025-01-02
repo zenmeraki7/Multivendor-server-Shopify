@@ -330,7 +330,11 @@ export const getVendorById = async (req, res) => {
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found." });
     }
-    res.status(200).json(vendor);
+    res.status(200).json({
+      message: "Vendors fetched successfully",
+      data: vendor,
+      success: true,
+    });
   } catch (error) {
     res.status(500).json({
       message: "Error fetching vendor details.",
