@@ -287,11 +287,35 @@ export const loginVendor = async (req, res) => {
   }
 };
 
-// Get All Vendors (Admin View)
 export const getAllVendors = async (req, res) => {
   try {
-    const vendors = await Vendor.find().select("-password");
-    res.status(200).json(vendors);
+    // Extract page and limit from query parameters, defaulting to page 1 and 10 items per page
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    // Calculate the number of documents to skip
+    const skip = (page - 1) * limit;
+
+    // Fetch vendors with pagination
+    const vendors = await Vendor.find()
+      .select(
+        "fullName email phoneNum country state companyName salesData companyIcon"
+      )
+      .skip(skip)
+      .limit(limit);
+
+    // Get the total count of vendors
+    const totalVendors = await Vendor.countDocuments();
+
+    res.status(200).json({
+      message: "Vendors fetched successfully",
+      data: vendors,
+      currentPage: page,
+      totalPages: Math.ceil(totalVendors / limit),
+      totalItems: totalVendors,
+      itemsPerPage: limit,
+      success: true,
+    });
   } catch (error) {
     res
       .status(500)
@@ -349,7 +373,11 @@ export const approveVendor = async (req, res) => {
     vendor.GSTIN.verified = true;
     vendor.bankDetails.isVerified = true;
     vendor.verificationRemarks = verificationRemarks || "Approved by admin.";
-    await vendor.save();
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      id,
+      { $set: vendor },
+      { new: true }
+    ).select("-password");
 
     // Create notification for the vendor
     await Notification.create({
