@@ -20,7 +20,7 @@ router.put("/update/:id", authentication, updateSubcategory);
 router.delete("/delete/:id", authentication, deleteSubcategory);
 
 // Get all subcategories
-router.get("/all", authentication, getAllSubcategories);
+router.get("/all-admin", authentication, getAllSubcategories);
 
 // Get all active subcategories
 router.get("/all", getAllActiveSubcategories);

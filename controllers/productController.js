@@ -29,12 +29,22 @@ export const createProduct = async (req, res) => {
     // req.body.price = 999.0;
     // req.body.discountedPrice = 799.0;
     // req.body.stock = 50;
+    req.body.tags = JSON.parse(req.body.tags).toString().split(",");
+    req.body.shippingDetails = JSON.parse(req.body.shippingDetails);
+    req.body.returnPolicy = JSON.parse(req.body.returnPolicy);
+    req.body.specifications = JSON.parse(req.body.specifications);
+    const metaField = JSON.parse(req.body.meta);
+    req.body.meta = {
+      ...metaField,
+      keywords: metaField.keywords.toString().split(","),
+    };
     req.body.thumbnail = { url: req.thumbnailUrl };
     req.body.images = req.uploadedImages?.map((item, index) => {
       return {
         url: item.url,
       };
     });
+    console.log(req.body);
     console.log(req.body);
     // Create new product (status 'pending' as it's awaiting approval)
     const newProduct = new Product({ seller: vendorId, ...req.body });

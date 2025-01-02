@@ -67,6 +67,7 @@ export const authenticateVendor = async (req, res, next) => {
     }
     // Attach vendor to request object
     req.vendor = vendor;
+    console.log("first")
     next();
   } catch (error) {
     res.status(400).json({ message: "Invalid token.", error: error.message });

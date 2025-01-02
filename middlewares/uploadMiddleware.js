@@ -65,8 +65,10 @@ export const handleImageUpload = async (req, res, next) => {
     // console.log(req.files);
     // Handle the thumbnail upload
     if (req.files?.thumbnail) {
+      console.log("thumbnail")
       const thumbnail = req.files.thumbnail[0];
       const cloudinaryResult = await uploadToCloudinary(thumbnail.path);
+      console.log(cloudinaryResult,"thumb")
       req.thumbnailUrl = cloudinaryResult.secure_url;
     }
     if (req.files?.companyIcon) {
@@ -91,6 +93,7 @@ export const handleImageUpload = async (req, res, next) => {
     }
     // Handle the product images upload
     if (req.files?.images) {
+      console.log("img")
       for (let image of req.files.images) {
         const cloudinaryResult = await uploadToCloudinary(image.path);
         uploadedImagesUrls.push({
@@ -98,6 +101,7 @@ export const handleImageUpload = async (req, res, next) => {
           public_id: cloudinaryResult.public_id,
         });
       }
+      console.log(uploadImages,"images")
       req.uploadedImages = uploadedImagesUrls;
     }
     next(); // Proceed to the next middleware or route handler

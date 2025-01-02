@@ -5,9 +5,10 @@ const productCreationSchema = Joi.object({
   description: Joi.string().required(),
   brand: Joi.string().required(),
   category: Joi.string().required(), // You may want to replace this with ObjectId validation if needed
+  categoryType: Joi.string().required(), // You may want to replace this with ObjectId validation if needed
   thumbnailAltText: Joi.string().optional(),
   imagesAltText: Joi.array().optional(),
-  subcategories: Joi.string().required(), // You may want to replace this with ObjectId validation if needed
+  subcategory: Joi.string().required(), // You may want to replace this with ObjectId validation if needed
   price: Joi.number().required().min(0),
   discountedPrice: Joi.number().required().min(0),
   variants: Joi.array()
@@ -24,14 +25,7 @@ const productCreationSchema = Joi.object({
       })
     )
     .optional(),
-  specifications: Joi.array()
-    .items(
-      Joi.object({
-        key: Joi.string().required(),
-        value: Joi.string().required(),
-      })
-    )
-    .optional(),
+  specifications: Joi.string().optional(),
   offers: Joi.array()
     .items(
       Joi.object({
@@ -43,21 +37,10 @@ const productCreationSchema = Joi.object({
     )
     .optional(),
   stock: Joi.number().min(0).default(0),
-  tags: Joi.array().items(Joi.string()).optional(),
-  shippingDetails: Joi.object({
-    weight: Joi.string().optional(),
-    freeShipping: Joi.boolean().optional().default(false),
-    ShippingCharge: Joi.number().optional(),
-  }).optional(),
-  returnPolicy: Joi.object({
-    isReturnable: Joi.boolean().default(false),
-    returnWindow: Joi.number().optional(),
-  }).optional(),
-  meta: Joi.object({
-    title: Joi.string().optional(),
-    description: Joi.string().optional(),
-    keywords: Joi.array().items(Joi.string()).optional(),
-  }).optional(),
+  tags: Joi.string().optional(),
+  shippingDetails: Joi.string().optional(),
+  returnPolicy: Joi.string().optional(),
+  meta: Joi.string().optional(),
 });
 
 const variantSchema = Joi.object({
@@ -78,9 +61,12 @@ const variantSchema = Joi.object({
 });
 
 export const validateProductCreation = (req, res, next) => {
+  console.log("validating");
+
   const { error } = productCreationSchema.validate(req.body, {
     abortEarly: false,
   });
+  console.log("validating product");
 
   if (error) {
     return res.status(400).json({

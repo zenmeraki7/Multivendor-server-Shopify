@@ -118,3 +118,15 @@ export const getAllCategoriesTypes = async (req, res) => {
       .json({ message: "Error retrieving categories", error: err.message });
   }
 };
+
+// Get All active Categories
+export const getAllActiveCategoriesTypes = async (req, res) => {
+  try {
+    const categories = await CategoryType.find({ isActive: true });
+    res.status(200).json({ data: categories });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error retrieving categories", error: err.message });
+  }
+};

@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
 const specificationSchema = new mongoose.Schema({
-  key: { type: String, required: true }, // e.g., "RAM", "Storage"
-  value: { type: String, required: true }, // e.g., "8GB", "128GB"
+  key: { type: String, default: "" }, // e.g., "RAM", "Storage"
+  value: { type: String, default: "" }, // e.g., "8GB", "128GB"
 });
 
 const offerSchema = new mongoose.Schema({
@@ -35,9 +35,14 @@ const productSchema = new mongoose.Schema(
       ref: "Category",
       required: true,
     }, // Main category
-    subcategories: {
+    subcategory: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Subcategory",
+      required: true,
+    }, // Array of subcategories
+    categoryType: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CategoryType",
       required: true,
     }, // Array of subcategories
     seller: {
