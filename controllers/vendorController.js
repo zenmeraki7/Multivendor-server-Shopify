@@ -301,6 +301,8 @@ export const getAllVendors = async (req, res) => {
       .select(
         "fullName email phoneNum country state companyName salesData companyIcon isVerified"
       )
+      .populate("country", "name") // Populate 'country' field, selecting only the 'name' field
+      .populate("state", "name") // Populate 'state' field, selecting only the 'name' field
       .skip(skip)
       .limit(limit);
 
@@ -326,7 +328,14 @@ export const getAllVendors = async (req, res) => {
 // Get Single Vendor (Admin View)
 export const getVendorById = async (req, res) => {
   try {
-    const vendor = await Vendor.findById(req.params.id).select("-password");
+    const vendor = await Vendor.findById(req.params.id)
+      .select("-password")
+      .populate("country", "name") // Populate 'country' field
+      .populate("state", "name") // Populate 'state' field
+      .populate({
+        path: "bankDetails.bankName", // Target the nested bankName field
+        select: "name", // Select only the name field from the Bank model
+      });
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found." });
     }
