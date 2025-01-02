@@ -299,7 +299,7 @@ export const getAllVendors = async (req, res) => {
     // Fetch vendors with pagination
     const vendors = await Vendor.find()
       .select(
-        "fullName email phoneNum country state companyName salesData companyIcon"
+        "fullName email phoneNum country state companyName salesData companyIcon isVerified"
       )
       .skip(skip)
       .limit(limit);
