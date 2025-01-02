@@ -244,7 +244,14 @@ export const loginVendor = async (req, res) => {
     }
 
     // Find Vendor by Email
-    const vendor = await Vendor.findOne({ email });
+    const vendor = await Vendor.findOne({ email })
+      .select("-password")
+      .populate("country", "name") // Populate 'country' field
+      .populate("state", "name") // Populate 'state' field
+      .populate({
+        path: "bankDetails.bankName", // Target the nested bankName field
+        select: "name", // Select only the name field from the Bank model
+      });
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found." });
     }
@@ -272,12 +279,7 @@ export const loginVendor = async (req, res) => {
     res.status(200).json({
       message: "Login successful.",
       token,
-      vendor: {
-        id: vendor._id,
-        fullName: vendor.fullName,
-        email: vendor.email,
-        companyName: vendor.companyName,
-      },
+      vendor,
     });
   } catch (error) {
     res.status(500).json({
