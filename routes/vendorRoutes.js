@@ -55,6 +55,7 @@ router.get("/auth-token", authentication, getLoginedVendor);
 // Admin approves a vendor
 router.put("/approve/:id", approveVendor);
 
+
 // Admin rejects a vendor
 router.put("/reject/:id", rejectVendor);
 
