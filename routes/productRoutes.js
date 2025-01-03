@@ -36,7 +36,7 @@ router.post(
   createProduct
 ); // Only vendors can create products
 
-router.get("/:productId", authentication, getProductById); // View product details
+router.get("/get-one/:productId", authentication, getProductById); // View product details
 
 // Admin routes
 router.put("/status", authenticateAdmin, updateProductStatus); // Admin approves/rejects products

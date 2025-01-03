@@ -195,15 +195,23 @@ export const getProductById = async (req, res) => {
   const { productId } = req.params;
 
   try {
-    const product = await Product.findById(productId).populate("seller");
-    // .populate("category")
-    // .populate("subcategories");
+    const product = await Product.findById(productId)
+      .populate("seller", "companyName email")
+      .populate("category", "name")
+      .populate("subcategory", "name")
+      .populate("categoryType", "name");
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res.status(200).json(product);
+    res
+      .status(200)
+      .json({
+        data: product,
+        message: "Product fetched successfully",
+        success: true,
+      });
   } catch (err) {
     res
       .status(500)
