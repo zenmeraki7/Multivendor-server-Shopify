@@ -156,10 +156,33 @@ export const updateProductStatus = async (req, res) => {
 // Get all products (for admin to view all)
 export const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find().populate("seller");
-    // .populate("category")
-    // .populate("subcategories");
-    res.status(200).json(products);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    // Calculate the number of documents to skip
+    const skip = (page - 1) * limit;
+
+    const products = await Product.find()
+      .select(
+        "title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt"
+      )
+      .populate("seller", "companyName companyIcon")
+      .populate("categoryType", "name")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const totalProducts = await Product.countDocuments();
+
+    res.status(200).json({
+      message: "Products fetched successfully",
+      data: products,
+      success: true,
+      currentPage: page,
+      totalPages: Math.ceil(totalProducts / limit),
+      totalItems: totalProducts,
+      itemsPerPage: limit,
+    });
   } catch (err) {
     res
       .status(500)

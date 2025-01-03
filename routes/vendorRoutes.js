@@ -47,7 +47,7 @@ router.post("/login", loginVendor);
 router.get("/all", authenticateAdmin, getAllVendors);
 
 // Admin views a single vendor
-router.get("/:id", authenticateAdmin, getVendorById);
+router.get("/get-one/:id", authenticateAdmin, getVendorById);
 
 //views a single vendor by token
 router.get("/auth-token", authentication, getLoginedVendor);

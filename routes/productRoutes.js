@@ -22,7 +22,9 @@ import {
 } from "../helper/productValidation.js";
 
 const router = express.Router();
-router.get("/allproduct", authenticateAdmin, getAllProducts); // Admin views all products
+
+ // Admin views all products
+router.get("/allproduct", authenticateAdmin, getAllProducts);
 
 // Vendor routes
 router.post(

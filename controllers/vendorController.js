@@ -306,7 +306,8 @@ export const getAllVendors = async (req, res) => {
       .populate("country", "name") // Populate 'country' field, selecting only the 'name' field
       .populate("state", "name") // Populate 'state' field, selecting only the 'name' field
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .sort({ createAt: -1 });
 
     // Get the total count of vendors
     const totalVendors = await Vendor.countDocuments();
