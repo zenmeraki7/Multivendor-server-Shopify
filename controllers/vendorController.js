@@ -405,17 +405,10 @@ export const approveVendor = async (req, res) => {
       to: vendor._id,
     });
 
-    // Generate Verification Token
-    const token = jwt.sign({ id: vendor._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
-
-    // Send Verification Email
-    const verificationUrl = `${process.env.CLIENT_SELLER_URL}/verify-vendor/${token}`;
     await sendEmail(
       vendor.email,
       "Vendor Account Verified",
-      `Dear ${vendor.fullName},\n\nYour vendor account "${vendor.companyName}" has been verified by the admin. Please click the link below to activate your account:\n\n${verificationUrl}\n\nThank you,\nTeam`
+      `Dear ${vendor.fullName},\n\nYour vendor account "${vendor.companyName}" has been verified by the admin.You can login now`
     );
 
     res.status(200).json({

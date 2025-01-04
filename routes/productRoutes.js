@@ -23,7 +23,7 @@ import {
 
 const router = express.Router();
 
- // Admin views all products
+// Admin views all products
 router.get("/allproduct", authenticateAdmin, getAllProducts);
 
 // Vendor routes
@@ -34,7 +34,7 @@ router.post(
   validateProductCreation,
   handleImageUpload,
   createProduct
-); // Only vendors can create products
+);
 
 router.get("/get-one/:productId", authentication, getProductById); // View product details
 

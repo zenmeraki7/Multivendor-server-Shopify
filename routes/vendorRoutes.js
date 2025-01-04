@@ -53,11 +53,10 @@ router.get("/get-one/:id", authenticateAdmin, getVendorById);
 router.get("/auth-token", authentication, getLoginedVendor);
 
 // Admin approves a vendor
-router.put("/approve/:id", approveVendor);
-
+router.put("/approve/:id", authenticateAdmin, approveVendor);
 
 // Admin rejects a vendor
-router.put("/reject/:id", rejectVendor);
+router.put("/reject/:id", authenticateAdmin, rejectVendor);
 
 // Route to update document details
 router.put(
