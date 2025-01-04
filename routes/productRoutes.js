@@ -6,6 +6,8 @@ import {
   getProductById,
   addVariant,
   editVariant,
+  approveProduct,
+  rejectProduct,
 } from "../controllers/productController.js";
 import {
   authenticateAdmin,
@@ -40,6 +42,8 @@ router.get("/get-one/:productId", authentication, getProductById); // View produ
 
 // Admin routes
 router.put("/status", authenticateAdmin, updateProductStatus); // Admin approves/rejects products
+router.put("/approve/:id", authenticateAdmin, approveProduct); // Admin approves/rejects products
+router.put("/reject/:id", authenticateAdmin, rejectProduct); // Admin approves/rejects products
 
 router.post(
   "/product-variant/:productId",

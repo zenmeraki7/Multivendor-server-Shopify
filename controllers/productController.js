@@ -205,13 +205,11 @@ export const getProductById = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res
-      .status(200)
-      .json({
-        data: product,
-        message: "Product fetched successfully",
-        success: true,
-      });
+    res.status(200).json({
+      data: product,
+      message: "Product fetched successfully",
+      success: true,
+    });
   } catch (err) {
     res
       .status(500)
@@ -312,5 +310,97 @@ export const editVariant = async (req, res) => {
       message: "Error updating variant.",
       error: error.message,
     });
+  }
+};
+
+// Approve Product and Send Verification Email
+export const approveProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { verificationRemarks } = req.body;
+
+    const product = await Product.findById(id).populate(
+      "seller",
+      "_id email fullName"
+    );
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    // Set the vendor as verified after admin approval
+    product.isApproved = true;
+    product.verificationRemarks = verificationRemarks || "Approved by admin.";
+    await product.save();
+
+    // Create notification for the vendor
+    await Notification.create({
+      title: "Product Approved",
+      message: `Your product "${product.title}" has been approved.`,
+      type: "Product",
+      vendorId: product.seller._id,
+      link: `/product/view`, // Link to the vendor dashboard
+      to: product.seller._id,
+    });
+
+    await sendEmail(
+      product.seller.email,
+      "Product approved",
+      `Dear ${product.seller.fullName},\n\nYour product "${product.title}" has been approved by the admin.`
+    );
+
+    res.status(200).json({
+      message: "Product approved successfully",
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error approving product.", error: error.message });
+  }
+};
+export const rejectProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { verificationRemarks } = req.body;
+
+    if (!verificationRemarks) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: "verificationRemarks is required",
+      });
+    }
+    const product = await Product.findById(id).populate(
+      "seller",
+      "_id email fullName"
+    );
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    // Set the vendor as verified after admin approval
+    product.isApproved = false;
+    product.verificationRemarks = verificationRemarks;
+    await product.save();
+
+    await Notification.create({
+      title: "Product Rejected",
+      message: `Your Product "${product.title}" has been rejected. Remarks: ${product.verificationRemarks}`,
+      type: "Product",
+      vendorId: product.seller._id,
+      link: `/product/view`, // Example link for vendor support
+      to: product.seller._id,
+    });
+
+    // Send rejection email
+    await sendEmail(
+      product.seller.email,
+      "Vendor Account Rejected",
+      `Dear ${product.seller.fullName},\n\nWe regret to inform you that your product "${product.title}" has been rejected. Remarks: ${product.verificationRemarks}.\n\nIf you believe this is a mistake or need assistance, please contact our support team.\n\nThank you,\nTeam`
+    );
+
+    res.status(200).json({ message: "Product rejected successfully." });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error rejecting product.", error: error.message });
   }
 };
