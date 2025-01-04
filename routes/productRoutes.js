@@ -8,6 +8,7 @@ import {
   editVariant,
   approveProduct,
   rejectProduct,
+  getAllActiveProducts,
 } from "../controllers/productController.js";
 import {
   authenticateAdmin,
@@ -24,6 +25,9 @@ import {
 } from "../helper/productValidation.js";
 
 const router = express.Router();
+
+// Admin views all products
+router.get("/all-customers", getAllActiveProducts);
 
 // Admin views all products
 router.get("/allproduct", authenticateAdmin, getAllProducts);

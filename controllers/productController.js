@@ -153,6 +153,38 @@ export const updateProductStatus = async (req, res) => {
   }
 };
 
+// Get all products (active)
+export const getAllActiveProducts = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+
+    // Calculate the number of documents to skip
+    const skip = (page - 1) * limit;
+
+    const products = await Product.find({ isActive: true, isApproved: true })
+      .select("title thumbnail discountedPrice brand productSold rating")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const totalProducts = await Product.countDocuments();
+
+    res.status(200).json({
+      message: "Products fetched successfully",
+      data: products,
+      success: true,
+      currentPage: page,
+      totalPages: Math.ceil(totalProducts / limit),
+      totalItems: totalProducts,
+      itemsPerPage: limit,
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching products", error: err.message });
+  }
+};
 // Get all products (for admin to view all)
 export const getAllProducts = async (req, res) => {
   try {
