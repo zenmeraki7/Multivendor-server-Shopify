@@ -9,6 +9,7 @@ import {
   approveProduct,
   rejectProduct,
   getAllActiveProducts,
+  getAllSellerProducts,
 } from "../controllers/productController.js";
 import {
   authenticateAdmin,
@@ -31,6 +32,9 @@ router.get("/all-customers", getAllActiveProducts);
 
 // Admin views all products
 router.get("/allproduct", authenticateAdmin, getAllProducts);
+
+// Admin views all products
+router.get("/all-seller-product", authenticateVendor, getAllSellerProducts);
 
 // Vendor routes
 router.post(

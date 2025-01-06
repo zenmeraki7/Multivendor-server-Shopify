@@ -221,6 +221,43 @@ export const getAllProducts = async (req, res) => {
       .json({ message: "Error fetching products", error: err.message });
   }
 };
+// Get all seller products (for seller to view all)
+export const getAllSellerProducts = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    // Calculate the number of documents to skip
+    const skip = (page - 1) * limit;
+
+    const products = await Product.find({ seller: req.vendor._id })
+      .select(
+        "title thumbnail discountedPrice brand categoryType stock isApproved createdAt"
+      )
+      .populate("categoryType", "name")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const totalProducts = await Product.countDocuments({
+      seller: req.params.id,
+    });
+
+    res.status(200).json({
+      message: "Products fetched successfully",
+      data: products,
+      success: true,
+      currentPage: page,
+      totalPages: Math.ceil(totalProducts / limit),
+      totalItems: totalProducts,
+      itemsPerPage: limit,
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching products", error: err.message });
+  }
+};
 
 // Get a specific product by ID (for vendor and admin)
 export const getProductById = async (req, res) => {
@@ -277,7 +314,7 @@ export const addVariant = async (req, res) => {
       value,
       additionalPrice: additionalPrice || 0,
       stock: stock || 0,
-      image: req.image || null,
+      image: { url: req.image } || null,
     };
     product.variants.push(newVariant);
 
