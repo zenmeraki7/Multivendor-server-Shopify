@@ -299,7 +299,9 @@ export const addVariant = async (req, res) => {
 
     // Check if the variant already exists
     const existingVariant = product.variants.find(
-      (v) => v.attribute === attribute && v.value === value
+      (v) =>
+        v.attribute.toLowerCase() === attribute.toLowerCase() &&
+        v.value.toLowerCase() === value.toLowerCase()
     );
 
     if (existingVariant) {
@@ -336,6 +338,7 @@ export const addVariant = async (req, res) => {
 export const editVariant = async (req, res) => {
   const { productId, variantId } = req.params;
   const { attribute, value, additionalPrice, stock } = req.body;
+  console.log(req.body)
 
   try {
     // Find the product
