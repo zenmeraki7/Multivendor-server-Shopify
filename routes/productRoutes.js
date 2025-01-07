@@ -62,7 +62,7 @@ router.post(
   addVariant
 );
 
-router.put(
+router.post(
   "/product-variant/:productId/:variantId",
   authenticateVendor,
   uploadImages,

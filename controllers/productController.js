@@ -338,7 +338,7 @@ export const addVariant = async (req, res) => {
 export const editVariant = async (req, res) => {
   const { productId, variantId } = req.params;
   const { attribute, value, additionalPrice, stock } = req.body;
-  console.log(req.body)
+  console.log(req.body);
 
   try {
     // Find the product
