@@ -7,9 +7,10 @@ import {
   rejectVendor,
   loginVendor,
   verifyVendor,
-  updateBankDetails,
-  updateDocumentDetails,
   getLoginedVendor,
+  updateVendorDetails,
+  addDocumentDetails,
+  addBankDetails,
 } from "../controllers/vendorController.js";
 import {
   handleImageUpload,
@@ -58,24 +59,27 @@ router.put("/approve/:id", authenticateAdmin, approveVendor);
 // Admin rejects a vendor
 router.put("/reject/:id", authenticateAdmin, rejectVendor);
 
-// Route to update document details
+// Route to add document details
 router.put(
   "/add-document",
   authentication,
   uploadImages,
   validateAddDocument,
   handleImageUpload,
-  updateDocumentDetails
+  addDocumentDetails
 );
 
-// Route to update bank details
+// Route to add bank details
 router.put(
   "/add-bank",
   authentication,
   uploadImages,
   validateAddBankDetails,
   handleImageUpload,
-  updateBankDetails
+  addBankDetails
 );
+
+// Route to update personal details
+router.put("/update-details", authentication, updateVendorDetails);
 
 export default router;

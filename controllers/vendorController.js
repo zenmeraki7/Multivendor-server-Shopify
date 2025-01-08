@@ -5,6 +5,7 @@ import Notification from "../models/Notification.js";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../utils/sendEmail.js";
 import Otp from "../models/Otp.js";
+import { vendorUpdateSchema } from "../helper/vendorValidation.js";
 
 // Approve/Reject Vendor Schema
 const vendorApprovalSchema = Joi.object({
@@ -133,8 +134,8 @@ export const verifyVendor = async (req, res) => {
   }
 };
 
-// Controller to update document details
-export const updateDocumentDetails = async (req, res) => {
+// Controller to add document details
+export const addDocumentDetails = async (req, res) => {
   // Check if both document URLs (PAN and GSTIN) are provided
   if (!req.PAN_URL || !req.GSTIN_URL) {
     return res
@@ -190,6 +191,99 @@ export const updateDocumentDetails = async (req, res) => {
     return res.status(500).json({ message: "Internal server error." });
   }
 };
+// Controller to update document details
+export const updateDocumentDetails = async (req, res) => {
+  try {
+    // Find vendor by ID
+    const vendor = await Vendor.findById(req.user.id);
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found." });
+    }
+
+    const { panNumber, gstinNumber } = req.body;
+
+    vendor.PAN = {
+      documentNumber: panNumber,
+      documentUrl: vendor.PAN.documentUrl,
+    };
+    if (req.PAN_URL) {
+      vendor.PAN.documentUrl = req.PAN_URL;
+    }
+    // Update KycProvidedDetails for PAN
+    vendor.KycProvidedDetails.PAN = true;
+
+    // Update GSTIN details if provided
+
+    vendor.GSTIN = {
+      documentNumber: gstinNumber,
+      documentUrl: vendor.GSTIN.documentUrl,
+    };
+    if (req.GSTIN_URL) {
+      vendor.PAN.documentUrl = req.GSTIN_URL;
+    }
+    // Update KycProvidedDetails for GSTIN
+    vendor.KycProvidedDetails.GSTIN = true;
+
+    // Save updated vendor details
+    const updatedData = await Vendor.findByIdAndUpdate(
+      req.user.id,
+      {
+        $set: vendor,
+      },
+      { new: true }
+    ).select("-password");
+    console.log(updatedData);
+    // Return success response
+    return res.status(200).json({
+      message: "PAN and GSTIN details updated successfully.",
+      user: updatedData,
+    });
+  } catch (error) {
+    console.error("Error updating document details:", error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+// Controller to add bank details
+export const addBankDetails = async (req, res) => {
+  if (!req.image) {
+    return res.status(404).json({ message: "document image required" });
+  }
+  const { accountHolderName, accountNumber, ifscCode, bankName } = req.body;
+
+  try {
+    // Find vendor and update bank details
+    const vendor = await Vendor.findById(req.user.id);
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    vendor.bankDetails = {
+      accountHolderName,
+      accountNumber,
+      ifscCode,
+      bankName,
+      documentUrl: req.image,
+    };
+    vendor.KycProvidedDetails.bankDetails = true;
+    // Save updated vendor details
+    const updatedData = await Vendor.findByIdAndUpdate(
+      req.user.id,
+      {
+        $set: vendor,
+      },
+      { new: true }
+    );
+    console.log(updatedData);
+    return res.status(200).json({
+      message: "Bank details updated successfully",
+      user: updatedData,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 // Controller to update bank details
 export const updateBankDetails = async (req, res) => {
@@ -210,8 +304,13 @@ export const updateBankDetails = async (req, res) => {
       accountNumber,
       ifscCode,
       bankName,
-      documentUrl: req.image,
+      documentUrl: vendor.bankDetails.documentUrl,
     };
+
+    if (req.image) {
+      vendor.bankDetails.documentUrl = req.image;
+    }
+
     vendor.KycProvidedDetails.bankDetails = true;
     // Save updated vendor details
     const updatedData = await Vendor.findByIdAndUpdate(
@@ -472,5 +571,44 @@ export const rejectVendor = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error rejecting vendor.", error: error.message });
+  }
+};
+
+export const updateVendorDetails = async (req, res) => {
+  try {
+    const vendorData = req.body;
+
+    // Validate the incoming data
+    const { error, value } = vendorUpdateSchema.validate(vendorData, {
+      abortEarly: false, // Return all errors, not just the first one
+    });
+
+    if (error) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: error.details.map((err) => err.message),
+      });
+    }
+
+    // Find the vendor by ID and update their details
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      req.user.id,
+      { $set: value },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!updatedVendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    res.status(200).json({
+      message: "Vendor details updated successfully",
+      data: updatedVendor,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error updating vendor details",
+      error: error.message,
+    });
   }
 };
