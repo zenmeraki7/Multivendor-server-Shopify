@@ -60,6 +60,9 @@ const productSchema = new mongoose.Schema(
     stock: { type: Number, default: 0 }, // Total stock
     isActive: { type: Boolean, default: true }, // Product active/inactive status
     isApproved: { type: Boolean, default: false }, // Product active/inactive status
+    verificationRemarks: {
+      type: String, // Remarks or reasons for approval/rejection
+    },
     inStock: { type: Boolean, default: true }, // Product active/inactive status
     rating: {
       average: { type: Number, default: 0 }, // Average rating

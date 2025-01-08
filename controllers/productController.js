@@ -153,6 +153,38 @@ export const updateProductStatus = async (req, res) => {
   }
 };
 
+// Get all products (active)
+export const getAllActiveProducts = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+
+    // Calculate the number of documents to skip
+    const skip = (page - 1) * limit;
+
+    const products = await Product.find({ isActive: true, isApproved: true })
+      .select("title thumbnail discountedPrice brand productSold rating")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const totalProducts = await Product.countDocuments();
+
+    res.status(200).json({
+      message: "Products fetched successfully",
+      data: products,
+      success: true,
+      currentPage: page,
+      totalPages: Math.ceil(totalProducts / limit),
+      totalItems: totalProducts,
+      itemsPerPage: limit,
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching products", error: err.message });
+  }
+};
 // Get all products (for admin to view all)
 export const getAllProducts = async (req, res) => {
   try {
@@ -189,6 +221,43 @@ export const getAllProducts = async (req, res) => {
       .json({ message: "Error fetching products", error: err.message });
   }
 };
+// Get all seller products (for seller to view all)
+export const getAllSellerProducts = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    // Calculate the number of documents to skip
+    const skip = (page - 1) * limit;
+
+    const products = await Product.find({ seller: req.vendor._id })
+      .select(
+        "title thumbnail discountedPrice brand categoryType stock isApproved createdAt"
+      )
+      .populate("categoryType", "name")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const totalProducts = await Product.countDocuments({
+      seller: req.params.id,
+    });
+
+    res.status(200).json({
+      message: "Products fetched successfully",
+      data: products,
+      success: true,
+      currentPage: page,
+      totalPages: Math.ceil(totalProducts / limit),
+      totalItems: totalProducts,
+      itemsPerPage: limit,
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching products", error: err.message });
+  }
+};
 
 // Get a specific product by ID (for vendor and admin)
 export const getProductById = async (req, res) => {
@@ -205,13 +274,11 @@ export const getProductById = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res
-      .status(200)
-      .json({
-        data: product,
-        message: "Product fetched successfully",
-        success: true,
-      });
+    res.status(200).json({
+      data: product,
+      message: "Product fetched successfully",
+      success: true,
+    });
   } catch (err) {
     res
       .status(500)
@@ -232,7 +299,9 @@ export const addVariant = async (req, res) => {
 
     // Check if the variant already exists
     const existingVariant = product.variants.find(
-      (v) => v.attribute === attribute && v.value === value
+      (v) =>
+        v.attribute.toLowerCase() === attribute.toLowerCase() &&
+        v.value.toLowerCase() === value.toLowerCase()
     );
 
     if (existingVariant) {
@@ -247,7 +316,7 @@ export const addVariant = async (req, res) => {
       value,
       additionalPrice: additionalPrice || 0,
       stock: stock || 0,
-      image: req.image || null,
+      image: { url: req.image } || null,
     };
     product.variants.push(newVariant);
 
@@ -269,6 +338,7 @@ export const addVariant = async (req, res) => {
 export const editVariant = async (req, res) => {
   const { productId, variantId } = req.params;
   const { attribute, value, additionalPrice, stock } = req.body;
+  console.log(req.body);
 
   try {
     // Find the product
@@ -312,5 +382,97 @@ export const editVariant = async (req, res) => {
       message: "Error updating variant.",
       error: error.message,
     });
+  }
+};
+
+// Approve Product and Send Verification Email
+export const approveProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { verificationRemarks } = req.body;
+
+    const product = await Product.findById(id).populate(
+      "seller",
+      "_id email fullName"
+    );
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    // Set the vendor as verified after admin approval
+    product.isApproved = true;
+    product.verificationRemarks = verificationRemarks || "Approved by admin.";
+    await product.save();
+
+    // Create notification for the vendor
+    await Notification.create({
+      title: "Product Approved",
+      message: `Your product "${product.title}" has been approved.`,
+      type: "Product",
+      vendorId: product.seller._id,
+      link: `/product/view`, // Link to the vendor dashboard
+      to: product.seller._id,
+    });
+
+    await sendEmail(
+      product.seller.email,
+      "Product approved",
+      `Dear ${product.seller.fullName},\n\nYour product "${product.title}" has been approved by the admin.`
+    );
+
+    res.status(200).json({
+      message: "Product approved successfully",
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error approving product.", error: error.message });
+  }
+};
+export const rejectProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { verificationRemarks } = req.body;
+
+    if (!verificationRemarks) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: "verificationRemarks is required",
+      });
+    }
+    const product = await Product.findById(id).populate(
+      "seller",
+      "_id email fullName"
+    );
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    // Set the vendor as verified after admin approval
+    product.isApproved = false;
+    product.verificationRemarks = verificationRemarks;
+    await product.save();
+
+    await Notification.create({
+      title: "Product Rejected",
+      message: `Your Product "${product.title}" has been rejected. Remarks: ${product.verificationRemarks}`,
+      type: "Product",
+      vendorId: product.seller._id,
+      link: `/product/view`, // Example link for vendor support
+      to: product.seller._id,
+    });
+
+    // Send rejection email
+    await sendEmail(
+      product.seller.email,
+      "Vendor Account Rejected",
+      `Dear ${product.seller.fullName},\n\nWe regret to inform you that your product "${product.title}" has been rejected. Remarks: ${product.verificationRemarks}.\n\nIf you believe this is a mistake or need assistance, please contact our support team.\n\nThank you,\nTeam`
+    );
+
+    res.status(200).json({ message: "Product rejected successfully." });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error rejecting product.", error: error.message });
   }
 };

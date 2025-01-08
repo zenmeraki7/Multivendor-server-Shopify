@@ -58,6 +58,7 @@ const variantSchema = Joi.object({
   stock: Joi.number().optional().messages({
     "number.base": "'stock' must be a number.",
   }),
+  image: Joi.string(),
 });
 
 export const validateProductCreation = (req, res, next) => {

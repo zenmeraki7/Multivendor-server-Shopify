@@ -66,7 +66,7 @@ export const authenticateVendor = async (req, res, next) => {
       return res.status(404).json({ message: "Vendor not found." });
     }
     if (!vendor.isVerified) {
-      return res.status(404).json({ message: "Not approved by admin" });
+      return res.status(404).json({ message: "Not approved by admin yet, Please wait for admin approval" });
     }
     // Attach vendor to request object
     req.vendor = vendor;

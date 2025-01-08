@@ -245,7 +245,6 @@ export const loginVendor = async (req, res) => {
 
     // Find Vendor by Email
     const vendor = await Vendor.findOne({ email })
-      .select("-password")
       .populate("country", "name") // Populate 'country' field
       .populate("state", "name") // Populate 'state' field
       .populate({
@@ -256,12 +255,15 @@ export const loginVendor = async (req, res) => {
       return res.status(404).json({ message: "Vendor not found." });
     }
 
-    // Check if Vendor is Approved
-    if (!vendor.isVerified) {
-      return res
-        .status(403)
-        .json({ message: "Your account has not approved yet." });
-    }
+    // // Check if Vendor is Approved
+    // if (!vendor.isVerified) {
+    //   return res
+    //     .status(403)
+    //     .json({
+    //       message:
+    //         "Your account has not approved yet.Please wait for admin approval",
+    //     });
+    // }
 
     // Compare Passwords
     const isPasswordValid = await bcrypt.compare(password, vendor.password);
@@ -275,11 +277,10 @@ export const loginVendor = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "7d" } // Token expiration time
     );
-
     res.status(200).json({
       message: "Login successful.",
       token,
-      vendor,
+      user: vendor,
     });
   } catch (error) {
     res.status(500).json({
@@ -307,7 +308,7 @@ export const getAllVendors = async (req, res) => {
       .populate("state", "name") // Populate 'state' field, selecting only the 'name' field
       .skip(skip)
       .limit(limit)
-      .sort({ createAt: -1 });
+      .sort({ createdAt: -1 });
 
     // Get the total count of vendors
     const totalVendors = await Vendor.countDocuments();
@@ -362,11 +363,16 @@ export const getLoginedVendor = async (req, res) => {
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found." });
     }
-    res.status(200).json(vendor);
+    res.status(200).json({
+      message: "Vendor fetched successfully.",
+      user: vendor,
+      success: true,
+    });
   } catch (error) {
     res.status(500).json({
       message: "Error fetching vendor details.",
       error: error.message,
+      success: false,
     });
   }
 };
