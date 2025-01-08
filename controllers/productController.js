@@ -262,14 +262,23 @@ export const getAllSellerProducts = async (req, res) => {
 // Get a specific product by ID (for vendor and admin)
 export const getProductById = async (req, res) => {
   const { productId } = req.params;
-
+  const { fields } = req.query;
+  let product = {};
   try {
-    const product = await Product.findById(productId)
-      .populate("seller", "companyName email")
-      .populate("category", "name")
-      .populate("subcategory", "name")
-      .populate("categoryType", "name");
-
+    if (fields) {
+      const neededFields = fields
+        ?.toString()
+        .split(",")
+        .map((item) => item.trim())
+        .join(" ");
+      product = await Product.findById(productId).select(neededFields);
+    } else {
+      product = await Product.findById(productId)
+        .populate("seller", "companyName email")
+        .populate("category", "name")
+        .populate("subcategory", "name")
+        .populate("categoryType", "name");
+    }
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }

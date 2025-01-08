@@ -14,6 +14,7 @@ import subcategoryRoutes from "./routes/subcategoryRoutes.js";
 import bankRoutes from "./routes/bankRoutes.js";
 import stateRoutes from "./routes/stateRoutes.js";
 import countryRoutes from "./routes/countryRoutes.js";
+import adminRoutes from "./routes/adminAuthRoutes.js";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import { logMiddleware } from "./middlewares/logMiddleware.js";
 
@@ -36,6 +37,7 @@ app.use(cors());
 // Log all API calls
 app.use(logMiddleware);
 
+app.use("/api/admin",adminRoutes );
 app.use("/api/auth", authRoutes);
 app.use("/api/vendor", vendorRoutes);
 app.use("/api/product", productRoutes);
