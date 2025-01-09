@@ -458,7 +458,7 @@ export const getVendorById = async (req, res) => {
 // Get Single Vendor by token
 export const getLoginedVendor = async (req, res) => {
   try {
-    const vendor = await Vendor.findById(req.user.id).select("-password");
+    const vendor = await Vendor.findById(req.user.id).select("-password")
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found." });
     }
