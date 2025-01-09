@@ -57,6 +57,58 @@ const vendorRegistrationSchema = Joi.object({
   }),
 });
 
+export const vendorUpdateSchema = Joi.object({
+  fullName: Joi.string().trim().required().messages({
+    "string.empty": "Full name is required.",
+  }),
+  email: Joi.string().email().required().messages({
+    "string.email": "Please provide a valid email address.",
+    "any.required": "Email is required.",
+  }),
+  phoneNum: Joi.string()
+    .pattern(/^[0-9]{10}$/)
+    .required()
+    .messages({
+      "string.pattern.base": "Phone number must be exactly 10 digits.",
+      "any.required": "Phone number is required.",
+    }),
+  address: Joi.string().required().messages({
+    "any.required": "Address is required.",
+  }),
+  zipCode: Joi.number().positive().required().messages({
+    "number.base": "Zip code must be a valid number.",
+    "any.required": "Zip code is required.",
+  }),
+  city: Joi.string().required().messages({
+    "any.required": "City is required.",
+  }),
+  state: Joi.string().required().messages({
+    "any.required": "State is required.",
+  }),
+  country: Joi.string().default("India").messages({
+    "any.required": "Country is required.",
+  }),
+  companyName: Joi.string().trim().required().messages({
+    "string.empty": "Company name is required.",
+    "any.required": "Company name is required.",
+  }),
+  website: Joi.string().uri().messages({
+    "string.uri": "Website must be a valid URL.",
+  }),
+  supportContact: Joi.object({
+    email: Joi.string().email().default("").messages({
+      "string.email": "Support email must be a valid email.",
+    }),
+    phone: Joi.string()
+      .pattern(/^[0-9]{10}$/)
+      .default("")
+      .messages({
+        "string.pattern.base":
+          "Support phone number must be exactly 10 digits.",
+      }),
+  }),
+});
+
 const documentDetailsSchema = Joi.object({
   panNumber: Joi.string()
     .pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/) // PAN format: AAAAA1234A
