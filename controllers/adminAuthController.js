@@ -122,3 +122,29 @@ export const loginAdmin = asyncHandler(async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+export const getadminByToken = async (req, res) => {
+  try {
+    // `req.user` is set by the `authentication` middleware
+    const userId = req.user.id;
+
+    // Fetch the user from the database
+    const user = await Admin.findById(userId).select("-password"); // Exclude the password field
+
+    if (!user) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Admin details fetched successfully",
+      data: user,
+    }); // Send user details as the response
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "error fetching admin",
+      error: error.message,
+      success: false,
+    });
+  }
+};

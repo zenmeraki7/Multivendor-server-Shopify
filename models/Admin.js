@@ -11,6 +11,9 @@ const adminSchema = new mongoose.Schema(
       required: true,
       unique: true, // Email must be unique for each admin
     },
+    DOB: {
+      type: Date,
+    },
     password: {
       type: String,
       required: true, // Password is required
