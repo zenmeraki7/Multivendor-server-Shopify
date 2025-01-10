@@ -13,6 +13,7 @@ import {
   addBankDetails,
   updateCompanyIcon,
   updateBankDetails,
+  updateDocumentDetails,
 } from "../controllers/vendorController.js";
 import {
   handleImageUpload,
@@ -69,6 +70,16 @@ router.put(
   validateAddDocument,
   handleImageUpload,
   addDocumentDetails
+);
+
+// Route to updated document details
+router.put(
+  "/update-document",
+  authentication,
+  uploadImages,
+  validateAddDocument,
+  handleImageUpload,
+  updateDocumentDetails
 );
 
 // Route to add bank details

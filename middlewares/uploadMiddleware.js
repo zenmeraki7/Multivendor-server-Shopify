@@ -75,14 +75,16 @@ export const handleImageUpload = async (req, res, next) => {
       const cloudinaryResult = await uploadToCloudinary(image.path);
       req.image = cloudinaryResult.secure_url;
     }
-    if (req.files?.PAN && req.files?.GSTIN) {
+    if (req.files?.PAN) {
       const PANdocument = req.files.PAN[0];
-      const GSTINdocument = req.files.GSTIN[0];
       const cloudinaryResultPAN = await uploadToCloudinary(PANdocument.path);
+      req.PAN_URL = cloudinaryResultPAN.secure_url;
+    }
+    if (req.files?.GSTIN) {
+      const GSTINdocument = req.files.GSTIN[0];
       const cloudinaryResultGSTIN = await uploadToCloudinary(
         GSTINdocument.path
       );
-      req.PAN_URL = cloudinaryResultPAN.secure_url;
       req.GSTIN_URL = cloudinaryResultGSTIN.secure_url;
     }
     // Handle the product images upload

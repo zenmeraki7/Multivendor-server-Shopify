@@ -219,7 +219,7 @@ export const updateDocumentDetails = async (req, res) => {
       documentUrl: vendor.GSTIN.documentUrl,
     };
     if (req.GSTIN_URL) {
-      vendor.PAN.documentUrl = req.GSTIN_URL;
+      vendor.GSTIN.documentUrl = req.GSTIN_URL;
     }
     // Update KycProvidedDetails for GSTIN
     vendor.KycProvidedDetails.GSTIN = true;
