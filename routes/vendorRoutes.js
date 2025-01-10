@@ -11,6 +11,8 @@ import {
   updateVendorDetails,
   addDocumentDetails,
   addBankDetails,
+  updateCompanyIcon,
+  updateBankDetails,
 } from "../controllers/vendorController.js";
 import {
   handleImageUpload,
@@ -77,6 +79,25 @@ router.put(
   validateAddBankDetails,
   handleImageUpload,
   addBankDetails
+);
+
+// Route to update bank details
+router.put(
+  "/update-bank-details",
+  authentication,
+  uploadImages,
+  validateAddBankDetails,
+  handleImageUpload,
+  updateBankDetails
+);
+
+// Route to update company icon
+router.put(
+  "/update-company-logo",
+  authenticateVendor,
+  uploadImages,
+  handleImageUpload,
+  updateCompanyIcon
 );
 
 // Route to update personal details
