@@ -11,11 +11,22 @@ import {
   getAllCategoriesTypes,
   updateCategoryType,
 } from "../controllers/categoryTypeController.js";
+import {
+  handleImageUpload,
+  uploadImages,
+} from "../middlewares/uploadMiddleware.js";
+import { validateCategoryTypeCreation } from "../helper/categoriesValidation.js";
 
 const router = express.Router();
 
 // Create a new category
-router.post("/create", authenticateAdmin, createCategoryType);
+router.post(
+  "/create",
+  uploadImages,
+  validateCategoryTypeCreation,
+  handleImageUpload,
+  createCategoryType
+);
 
 // Update a category
 router.put("/update/:id", authenticateAdmin, updateCategoryType);
@@ -24,7 +35,7 @@ router.put("/update/:id", authenticateAdmin, updateCategoryType);
 router.delete("/delete/:id", authenticateAdmin, deleteCategoryType);
 
 // Get all categories
-router.get("/all-admin", authentication, getAllCategoriesTypes);
+router.get("/all-admin", authenticateAdmin, getAllCategoriesTypes);
 
 // Get all actuve categories
 router.get("/all", getAllActiveCategoriesTypes);

@@ -40,21 +40,15 @@ export const uploadImages = upload.fields([
   { name: "image", maxCount: 1 }, // For product images
 ]);
 
-// Function to upload image to Cloudinary
-const uploadToCloudinary = (filePath) => {
-  return new Promise((resolve, reject) => {
-    cloudinaryV2.uploader.upload(
-      filePath,
-      { folder: "multivendor" },
-      (error, result) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      }
-    );
-  });
+export const uploadToCloudinary = async (filePath) => {
+  try {
+    const result = await cloudinaryV2.uploader.upload(filePath, {
+      folder: "multivendor",
+    });
+    return result; // Resolves with the upload result
+  } catch (error) {
+    throw new Error(`Cloudinary upload failed: ${error.message}`); // Rejects with the error
+  }
 };
 
 // Function to handle the actual image upload to Cloudinary
@@ -65,10 +59,10 @@ export const handleImageUpload = async (req, res, next) => {
     // console.log(req.files);
     // Handle the thumbnail upload
     if (req.files?.thumbnail) {
-      console.log("thumbnail")
+      console.log("thumbnail");
       const thumbnail = req.files.thumbnail[0];
       const cloudinaryResult = await uploadToCloudinary(thumbnail.path);
-      console.log(cloudinaryResult,"thumb")
+      console.log(cloudinaryResult, "thumb");
       req.thumbnailUrl = cloudinaryResult.secure_url;
     }
     if (req.files?.companyIcon) {
@@ -81,19 +75,21 @@ export const handleImageUpload = async (req, res, next) => {
       const cloudinaryResult = await uploadToCloudinary(image.path);
       req.image = cloudinaryResult.secure_url;
     }
-    if (req.files?.PAN && req.files?.GSTIN) {
+    if (req.files?.PAN) {
       const PANdocument = req.files.PAN[0];
-      const GSTINdocument = req.files.GSTIN[0];
       const cloudinaryResultPAN = await uploadToCloudinary(PANdocument.path);
+      req.PAN_URL = cloudinaryResultPAN.secure_url;
+    }
+    if (req.files?.GSTIN) {
+      const GSTINdocument = req.files.GSTIN[0];
       const cloudinaryResultGSTIN = await uploadToCloudinary(
         GSTINdocument.path
       );
-      req.PAN_URL = cloudinaryResultPAN.secure_url;
       req.GSTIN_URL = cloudinaryResultGSTIN.secure_url;
     }
     // Handle the product images upload
     if (req.files?.images) {
-      console.log("img")
+      console.log("img");
       for (let image of req.files.images) {
         const cloudinaryResult = await uploadToCloudinary(image.path);
         uploadedImagesUrls.push({
@@ -101,7 +97,7 @@ export const handleImageUpload = async (req, res, next) => {
           public_id: cloudinaryResult.public_id,
         });
       }
-      console.log(uploadImages,"images")
+      console.log(uploadImages, "images");
       req.uploadedImages = uploadedImagesUrls;
     }
     next(); // Proceed to the next middleware or route handler

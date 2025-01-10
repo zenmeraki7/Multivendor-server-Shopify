@@ -219,7 +219,7 @@ export const updateDocumentDetails = async (req, res) => {
       documentUrl: vendor.GSTIN.documentUrl,
     };
     if (req.GSTIN_URL) {
-      vendor.PAN.documentUrl = req.GSTIN_URL;
+      vendor.GSTIN.documentUrl = req.GSTIN_URL;
     }
     // Update KycProvidedDetails for GSTIN
     vendor.KycProvidedDetails.GSTIN = true;
@@ -287,9 +287,6 @@ export const addBankDetails = async (req, res) => {
 
 // Controller to update bank details
 export const updateBankDetails = async (req, res) => {
-  if (!req.image) {
-    return res.status(404).json({ message: "document image required" });
-  }
   const { accountHolderName, accountNumber, ifscCode, bankName } = req.body;
 
   try {
@@ -594,6 +591,33 @@ export const updateVendorDetails = async (req, res) => {
     const updatedVendor = await Vendor.findByIdAndUpdate(
       req.user.id,
       { $set: value },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!updatedVendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    res.status(200).json({
+      message: "Vendor details updated successfully",
+      data: updatedVendor,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error updating vendor details",
+      error: error.message,
+    });
+  }
+};
+
+export const updateCompanyIcon = async (req, res) => {
+  try {
+    if (!req.image) {
+      return res.status(404).json({ message: "Logo is required" });
+    }
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      req.vendor._id,
+      { $set: { companyIcon: req.image } },
       { new: true, runValidators: true }
     ).select("-password");
 

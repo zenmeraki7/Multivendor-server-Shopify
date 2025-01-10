@@ -109,6 +109,7 @@ export const vendorUpdateSchema = Joi.object({
   }),
 });
 
+
 const documentDetailsSchema = Joi.object({
   panNumber: Joi.string()
     .pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/) // PAN format: AAAAA1234A

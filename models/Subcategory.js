@@ -9,6 +9,7 @@ const subcategorySchema = new mongoose.Schema(
       ref: "Category", // Reference to the parent Category model
       required: true,
     },
+    icon: { type: String }, // Optional: Description of the category
     categoryType: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CategoryType",
