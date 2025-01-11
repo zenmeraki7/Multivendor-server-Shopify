@@ -1,42 +1,19 @@
-import Joi from "joi";
 import Category from "../models/Category.js";
 
-export const categoryValidationSchema = Joi.object({
-  name: Joi.string().required().messages({
-    "string.empty": "Category name is required",
-    "string.base": "Category name should be a string",
-  }),
-  description: Joi.string().optional().max(500).messages({
-    "string.max": "Description should not exceed 500 characters",
-  }),
-  categoryType: Joi.string().required().messages({
-    "string.empty": "Category type name is required",
-  }),
-});
-
 export const createCategory = async (req, res) => {
-  // Validate the request body using Joi
-  const { error } = categoryValidationSchema.validate(req.body, {
-    abortEarly: false,
-  });
-
-  if (error) {
-    return res.status(400).json({
-      message: "Validation error",
-      errors: error.details.map((err) => ({
-        field: err.path[0],
-        message: err.message,
-      })),
-    });
+  if (!req.image) {
+    return res
+      .status(404)
+      .json({ message: "image is required", success: false });
   }
-
   try {
+    req.body.icon = req.image;
     const category = new Category(req.body);
 
     await category.save();
     res
       .status(201)
-      .json({ message: "Category created successfully", category });
+      .json({ message: "Category created successfully", data: category });
   } catch (err) {
     res
       .status(500)
@@ -102,12 +79,48 @@ export const deleteCategory = async (req, res) => {
 // Get All Categories
 export const getAllCategories = async (req, res) => {
   try {
-    const categories = await Category.find().populate("categoryType", "name");
-    res.status(200).json({ data: categories });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    if (req.query.id) {
+      const category = await Category.findById(req.query.id);
+      if (!category) {
+        return res.status(404).json({
+          success: false,
+          message: "Category not found",
+        });
+      }
+      return res.status(200).json({
+        data: category,
+        success: true,
+        message: "Category fetched successfully",
+      });
+    }
+
+    const categories = await Category.find()
+      .populate("categoryType", "name")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const totalCount = await Category.countDocuments();
+
+    res.status(200).json({
+      data: categories,
+      success: true,
+      message: "Categories fetched successfully",
+      totalCount,
+      page: page,
+      limit: limit,
+      totalPages: Math.ceil(totalCount / limit),
+    });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error retrieving categories", error: err.message });
+    res.status(500).json({
+      message: "Error retrieving categories",
+      error: err.message,
+      success: false,
+    });
   }
 };
 
@@ -129,13 +142,11 @@ export const getAllActiveCategories = async (req, res) => {
         "categoryType",
         "name"
       );
-      res
-        .status(200)
-        .json({
-          success: true,
-          message: "categories fetched succussfully",
-          data: categories,
-        });
+      res.status(200).json({
+        success: true,
+        message: "categories fetched succussfully",
+        data: categories,
+      });
     }
   } catch (err) {
     res

@@ -10,11 +10,25 @@ import {
   authenticateAdmin,
   authentication,
 } from "../middlewares/jwtMiddleware.js"; // Optional: If you need authentication
+import {
+  handleImageUpload,
+  uploadImages,
+} from "../middlewares/uploadMiddleware.js";
+import { validateCategoryCreate } from "../helper/categoriesValidation.js";
+import { checkCategoryExist } from "../middlewares/checkexistMiddleware.js";
 
 const router = express.Router();
 
 // Create a new category
-router.post("/create", authenticateAdmin, createCategory);
+router.post(
+  "/create",
+  authenticateAdmin,
+  uploadImages,
+  validateCategoryCreate,
+  checkCategoryExist,
+  handleImageUpload,
+  createCategory
+);
 
 // Update a category
 router.put("/update/:id", authenticateAdmin, updateCategory);

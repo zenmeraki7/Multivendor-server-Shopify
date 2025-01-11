@@ -52,4 +52,5 @@ const adminSchema = new mongoose.Schema(
   { timestamps: true } // Adds `createdAt` and `updatedAt` fields
 );
 
+const Admins = mongoose.model("Admins", adminSchema);
 export default Admins;
