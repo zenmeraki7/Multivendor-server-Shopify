@@ -23,25 +23,31 @@ export const createCategory = async (req, res) => {
 
 // Update Category
 export const updateCategory = async (req, res) => {
-  // Validate the request body using Joi
-  const { error } = categoryValidationSchema.validate(req.body, {
-    abortEarly: false,
-  });
-
-  if (error) {
-    return res.status(400).json({
-      message: "Validation error",
-      errors: error.details.map((err) => ({
-        field: err.path[0],
-        message: err.message,
-      })),
-    });
-  }
-
+  const { name, description, isActive, categoryType } = req.body;
   try {
-    const category = await Category.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    const category = await Category.findById(req.params.id);
+    if (name) {
+      category.name = name;
+    }
+    if (description) {
+      category.description = description;
+    }
+    if (isActive !== undefined) {
+      category.isActive = isActive;
+    }
+    if (categoryType) {
+      category.categoryType = categoryType;
+    }
+    if (req.image) {
+      category.icon = req.image;
+    }
+    const updatedcategory = await Category.findByIdAndUpdate(
+      req.params.id,
+      { $set: category },
+      {
+        new: true,
+      }
+    );
 
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
@@ -49,7 +55,10 @@ export const updateCategory = async (req, res) => {
 
     res
       .status(200)
-      .json({ message: "Category updated successfully", category });
+      .json({
+        message: "Category updated successfully",
+        data: updatedcategory,
+      });
   } catch (err) {
     res
       .status(500)

@@ -40,7 +40,6 @@ router.put(
   authenticateAdmin,
   uploadImages,
   validateCategoryTypeUpdate,
-  checkCategoryTypeExist,
   handleImageUpload,
   updateCategoryType
 );
