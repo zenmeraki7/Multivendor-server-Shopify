@@ -14,7 +14,7 @@ import {
   handleImageUpload,
   uploadImages,
 } from "../middlewares/uploadMiddleware.js";
-import { validateSubCategoryUpdate } from "../helper/categoriesValidation.js";
+import { validateSubCategoryCreate, validateSubCategoryUpdate } from "../helper/categoriesValidation.js";
 import { checkSubCategoryExist } from "../middlewares/checkexistMiddleware.js";
 
 const router = express.Router();
@@ -24,14 +24,21 @@ router.post(
   "/create",
   authenticateAdmin,
   uploadImages,
-  validateSubCategoryUpdate,
+  validateSubCategoryCreate,
   checkSubCategoryExist,
   handleImageUpload,
   createSubcategory
 );
 
 // Update a subcategory
-router.put("/update/:id", authenticateAdmin, updateSubcategory);
+router.put(
+  "/update/:id",
+  authenticateAdmin,
+  uploadImages,
+  validateSubCategoryUpdate,
+  handleImageUpload,
+  updateSubcategory
+);
 
 // Delete a subcategory
 router.delete("/delete/:id", authenticateAdmin, deleteSubcategory);

@@ -24,35 +24,40 @@ export const createSubcategory = async (req, res) => {
 
 // Update Subcategory
 export const updateSubcategory = async (req, res) => {
-  // Validate the request body using Joi
-  const { error } = subcategoryValidationSchema.validate(req.body, {
-    abortEarly: false,
-  });
-
-  if (error) {
-    return res.status(400).json({
-      message: "Validation error",
-      errors: error.details.map((err) => ({
-        field: err.path[0],
-        message: err.message,
-      })),
-    });
-  }
-
+  const { name, description, isActive, category } = req.body;
   try {
-    const subcategory = await Subcategory.findByIdAndUpdate(
+    const subcategory = await Subcategory.findById(req.params.id);
+    if (name) {
+      subcategory.name = name;
+    }
+    if (description) {
+      subcategory.description = description;
+    }
+    if (isActive !== undefined) {
+      subcategory.isActive = isActive;
+    }
+    if (category) {
+      subcategory.category = category;
+    }
+    if (req.image) {
+      subcategory.icon = req.image;
+    }
+    const updatedsubcategory = await Subcategory.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      { $set: subcategory },
       { new: true }
     );
 
-    if (!subcategory) {
+    if (!updatedsubcategory) {
       return res.status(404).json({ message: "Subcategory not found" });
     }
 
     res
       .status(200)
-      .json({ message: "Subcategory updated successfully", subcategory });
+      .json({
+        message: "Subcategory updated successfully",
+        data: updatedsubcategory,
+      });
   } catch (err) {
     res
       .status(500)
