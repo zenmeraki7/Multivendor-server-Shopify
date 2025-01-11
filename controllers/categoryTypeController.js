@@ -1,5 +1,4 @@
 import Joi from "joi";
-import Category from "../models/Category.js";
 import CategoryType from "../models/CategoryType.js";
 
 export const createCategoryType = async (req, res) => {
@@ -10,14 +9,6 @@ export const createCategoryType = async (req, res) => {
   }
 
   try {
-    const exist = await CategoryType.findOne({ name: req.body.name });
-    console.log(exist);
-    if (exist) {
-      return res
-        .status(404)
-        .json({ message: "category Type already exist", success: false });
-    }
-
     req.body.icon = req.image;
     const category = new CategoryType(req.body);
 
@@ -38,39 +29,31 @@ export const createCategoryType = async (req, res) => {
 
 // Update Category
 export const updateCategoryType = async (req, res) => {
-  // Validate the request body using Joi
-  const { error } = categoryValidationSchema.validate(req.body, {
-    abortEarly: false,
-  });
-
-  if (error) {
-    return res.status(400).json({
-      message: "Validation error",
-      errors: error.details.map((err) => ({
-        field: err.path[0],
-        message: err.message,
-      })),
-    });
-  }
-
+  const { name, description, isActive } = req.body;
   try {
-    const category = await CategoryType.findByIdAndUpdate(
-      req.params.id,
-      {
-        name: req.body.name,
-        description: req.body.description,
-        isActive: req.body.isActive,
-      },
-      { new: true }
-    );
-
-    if (!category) {
-      return res.status(404).json({ message: "Category not found" });
+    const category = await CategoryType.findById(req.params.id);
+    if (name) {
+      category.name = name;
+    }
+    if (description) {
+      category.description = description;
+    }
+    if (isActive !== undefined) {
+      category.isActive = isActive;
+    }
+    if (req.image) {
+      category.icon = req.image;
     }
 
-    res
-      .status(200)
-      .json({ message: "Category updated successfully", category });
+    const updatedcategory = await CategoryType.findByIdAndUpdate(
+      req.params.id,
+      { $set: category },
+      { new: true }
+    );
+    res.status(200).json({
+      message: "Category updated successfully",
+      data: updatedcategory,
+    });
   } catch (err) {
     res
       .status(500)

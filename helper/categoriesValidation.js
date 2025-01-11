@@ -11,11 +11,41 @@ export const categoryTypeValidationSchema = Joi.object({
   isActive: Joi.boolean().required(true),
 });
 
+export const categoryTypeUpdateValidationSchema = Joi.object({
+  name: Joi.string().messages({
+    "string.base": "Category name should be a string",
+  }),
+  description: Joi.string().optional().max(500).messages({
+    "string.max": "Description should not exceed 500 characters",
+  }),
+  isActive: Joi.boolean(),
+});
+
 export const validateCategoryTypeCreation = (req, res, next) => {
   const { error } = categoryTypeValidationSchema.validate(req.body, {
     abortEarly: false,
   });
   console.log("validating product");
+
+  if (error) {
+    return res.status(400).json({
+      status: "error",
+      message: "Validation error",
+      details: error.details.map((err) => ({
+        message: err.message,
+        field: err.path[0],
+      })),
+    });
+  }
+
+  next();
+};
+
+export const validateCategoryTypeUpdate = (req, res, next) => {
+  const { error } = categoryTypeUpdateValidationSchema.validate(req.body, {
+    abortEarly: false,
+  });
+  console.log("validating categort type");
 
   if (error) {
     return res.status(400).json({
