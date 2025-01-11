@@ -84,11 +84,11 @@ export const deleteCategoryType = async (req, res) => {
 export const getAllCategoriesTypes = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     if (req.query.id) {
-      const category = await CategoryType.findById(id);
+      const category = await CategoryType.findById(req.query.id);
       if (!category) {
         return res.status(404).json({
           success: false,
