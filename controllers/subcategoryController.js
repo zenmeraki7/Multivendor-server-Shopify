@@ -1,48 +1,20 @@
-import Joi from "joi";
 import Subcategory from "../models/Subcategory.js";
-
-export const subcategoryValidationSchema = Joi.object({
-  name: Joi.string().required().messages({
-    "string.empty": "Subcategory name is required",
-    "string.base": "Subcategory name should be a string",
-  }),
-  category: Joi.string().required().messages({
-    "string.empty": "Category ID is required",
-    "string.base": "Category ID should be a valid string",
-  }),
-  description: Joi.string().optional().max(500).messages({
-    "string.max": "Description should not exceed 500 characters",
-  }),
-  categoryType: Joi.string().required().messages({
-    "string.empty": "Category Type id is required",
-    "string.base": "Category type ID should be a valid string",
-  }),
-});
 
 // Create Subcategory
 export const createSubcategory = async (req, res) => {
-  // Validate the request body using Joi
-  const { error } = subcategoryValidationSchema.validate(req.body, {
-    abortEarly: false,
-  });
-
-  if (error) {
-    return res.status(400).json({
-      message: "Validation error",
-      errors: error.details.map((err) => ({
-        field: err.path[0],
-        message: err.message,
-      })),
-    });
+  if (!req.image) {
+    return res
+      .status(404)
+      .json({ message: "image is required", success: false });
   }
-
   try {
+    req.body.icon = req.image;
     const subcategory = new Subcategory(req.body);
 
     await subcategory.save();
     res
       .status(201)
-      .json({ message: "Subcategory created successfully", subcategory });
+      .json({ message: "Subcategory created successfully", data: subcategory });
   } catch (err) {
     res
       .status(500)
@@ -110,10 +82,42 @@ export const deleteSubcategory = async (req, res) => {
 // Get All Subcategories
 export const getAllSubcategories = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    if (req.query.id) {
+      const subcategory = await Subcategory.findById(req.query.id);
+      if (!subcategory) {
+        return res.status(404).json({
+          success: false,
+          message: "Sub Category not found",
+        });
+      }
+      return res.status(200).json({
+        data: subcategory,
+        success: true,
+        message: "Sub Category fetched successfully",
+      });
+    }
+
     const subcategories = await Subcategory.find()
       .populate("category", "name")
-      .populate("categoryType", "name"); // Populate category name
-    res.status(200).json({ data: subcategories });
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const totalCount = await Subcategory.countDocuments();
+
+    res.status(200).json({
+      data: subcategories,
+      success: true,
+      message: "Sub Categories fetched successfully",
+      totalCount,
+      page: page,
+      limit: limit,
+      totalPages: Math.ceil(totalCount / limit),
+    });
   } catch (err) {
     res
       .status(500)
@@ -128,25 +132,22 @@ export const getAllActiveSubcategories = async (req, res) => {
       const subcategories = await Subcategory.find({
         category: req.query.id,
         isActive: true,
-      })
-        .populate("category", "name")
-        .populate("categoryType", "name"); // Populate category name
+      }).populate("category", "name");
       res.status(200).json({
         success: true,
         message: "subcategories fetched successfully",
         data: subcategories,
       });
     } else {
-      const subcategories = await Subcategory.find({ isActive: true })
-        .populate("category", "name")
-        .populate("categoryType", "name"); // Populate category name
-      res
-        .status(200)
-        .json({
-          success: true,
-          message: "subcategories fetched successfully",
-          data: subcategories,
-        });
+      const subcategories = await Subcategory.find({ isActive: true }).populate(
+        "category",
+        "name"
+      );
+      res.status(200).json({
+        success: true,
+        message: "subcategories fetched successfully",
+        data: subcategories,
+      });
     }
   } catch (err) {
     res

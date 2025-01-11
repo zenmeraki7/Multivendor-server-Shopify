@@ -10,11 +10,11 @@ const subcategorySchema = new mongoose.Schema(
       required: true,
     },
     icon: { type: String }, // Optional: Description of the category
-    categoryType: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "CategoryType",
-      required: true,
-    },
+    // categoryType: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "CategoryType",
+    //   required: true,
+    // },
     description: { type: String }, // Optional: Description of the subcategory
     isActive: { type: Boolean, default: true }, // Whether the subcategory is active
   },
