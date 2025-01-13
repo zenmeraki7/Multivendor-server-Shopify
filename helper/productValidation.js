@@ -5,27 +5,13 @@ const productCreationSchema = Joi.object({
   description: Joi.string().required(),
   brand: Joi.string().required(),
   category: Joi.string().required(), // You may want to replace this with ObjectId validation if needed
-  categoryType: Joi.string().required(), // You may want to replace this with ObjectId validation if needed
-  thumbnailAltText: Joi.string().optional(),
-  imagesAltText: Joi.array().optional(),
+  categoryType: Joi.string().required(),
   subcategory: Joi.string().required(), // You may want to replace this with ObjectId validation if needed
   price: Joi.number().required().min(0),
   discountedPrice: Joi.number().required().min(0),
-  variants: Joi.array()
-    .items(
-      Joi.object({
-        attribute: Joi.string().required(),
-        value: Joi.string().required(),
-        additionalPrice: Joi.number().min(0).optional(),
-        stock: Joi.number().min(0).optional(),
-        image: Joi.object({
-          url: Joi.string().uri().required(),
-          altText: Joi.string().optional(),
-        }).optional(),
-      })
-    )
-    .optional(),
   specifications: Joi.string().optional(),
+  imageIndex: Joi.array(),
+  images: Joi.optional(),
   offers: Joi.array()
     .items(
       Joi.object({

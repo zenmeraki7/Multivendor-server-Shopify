@@ -71,6 +71,97 @@ export const createProduct = async (req, res) => {
   }
 };
 
+// Vendor creates a product (unapproved)
+export const updateProduct = async (req, res) => {
+  const productId = req.params.id;
+  try {
+    const {
+      title,
+      description,
+      brand,
+      category,
+      categoryType,
+      subcategory,
+      price,
+      discountedPrice,
+      specifications,
+      stock,
+      tags,
+      shippingDetails,
+      returnPolicy,
+      meta,
+    } = req.body;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res
+        .status(402)
+        .json({ message: "Product no found", success: false });
+    }
+    title && (product.title = title);
+    description && (product.description = description);
+    brand && (product.brand = brand);
+    category && (product.category = category);
+    categoryType && (product.categoryType = categoryType);
+    subcategory && (product.subcategory = subcategory);
+    price && (product.price = Number(price));
+    stock && (product.stock = Number(stock));
+    discountedPrice && (product.discountedPrice = Number(discountedPrice));
+    specifications && (product.specifications = JSON.parse(specifications));
+    shippingDetails && (product.shippingDetails = JSON.parse(shippingDetails));
+    returnPolicy && (product.returnPolicy = JSON.parse(returnPolicy));
+    tags && (product.tags = JSON.parse(tags).toString().split(","));
+    if (meta) {
+      const metaField = JSON.parse(meta);
+      product.meta = {
+        ...metaField,
+        keywords: metaField.keywords.toString().split(","),
+      };
+    }
+    if (req.thumbnailUrl) {
+      product.thumbnail.url = req.thumbnailUrl;
+    }
+    console.log(req.uploadedImages);
+    console.log(req.body.imageIndex);
+    // if (req.uploadedImages?.length) {
+    //   product.images = req.uploadedImages?.map((item, index) => {
+    //     return {
+    //       url: item.url,
+    //     };
+    //   });
+    // }
+
+    const vendorId = req.vendor._id;
+    // console.log(req.body);
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      {
+        $set: product,
+      },
+      { new: true }
+    );
+    console.log("saved");
+    await Notification.create({
+      title: `${updatedProduct.title} Product Updated`,
+      message: `Vendor "${req.vendor.companyName}" has updated a product "${updatedProduct.title}".`,
+      type: "Product",
+      vendorId: vendorId,
+      link: `/admin/view-product/${updatedProduct._id}`, // Link to the product page in the admin panel
+      to: "admin",
+    });
+    // console.log("senting resposne");
+    // console.log(updatedProduct);
+    res.status(201).json({
+      message: "Product updated successfully.",
+      data: updatedProduct,
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error creating product", error: err.message });
+  }
+};
+
 // Admin approves or rejects a product
 export const updateProductStatus = async (req, res) => {
   const { productId, action } = req.body; // 'action' could be 'approve' or 'reject'

@@ -10,6 +10,7 @@ import {
   rejectProduct,
   getAllActiveProducts,
   getAllSellerProducts,
+  updateProduct,
 } from "../controllers/productController.js";
 import {
   authenticateAdmin,
@@ -44,6 +45,16 @@ router.post(
   validateProductCreation,
   handleImageUpload,
   createProduct
+);
+
+// Vendor routes for update product
+router.post(
+  "/update/:id",
+  authenticateVendor,
+  uploadImages,
+  validateProductCreation,
+  handleImageUpload,
+  updateProduct
 );
 
 router.get("/get-one/:productId", authentication, getProductById); // View product details
