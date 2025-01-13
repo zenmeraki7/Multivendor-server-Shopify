@@ -14,7 +14,10 @@ import {
   handleImageUpload,
   uploadImages,
 } from "../middlewares/uploadMiddleware.js";
-import { validateCategoryCreate } from "../helper/categoriesValidation.js";
+import {
+  validateCategoryCreate,
+  validateCategoryUpdate,
+} from "../helper/categoriesValidation.js";
 import { checkCategoryExist } from "../middlewares/checkexistMiddleware.js";
 
 const router = express.Router();
@@ -31,7 +34,14 @@ router.post(
 );
 
 // Update a category
-router.put("/update/:id", authenticateAdmin, updateCategory);
+router.put(
+  "/update/:id",
+  authenticateAdmin,
+  uploadImages,
+  validateCategoryUpdate,
+  handleImageUpload,
+  updateCategory
+);
 
 // Delete a category
 router.delete("/delete/:id", authenticateAdmin, deleteCategory);
