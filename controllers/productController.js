@@ -122,14 +122,14 @@ export const updateProduct = async (req, res) => {
       product.thumbnail.url = req.thumbnailUrl;
     }
     console.log(req.uploadedImages);
-    console.log(req.body.imageIndex);
-    // if (req.uploadedImages?.length) {
-    //   product.images = req.uploadedImages?.map((item, index) => {
-    //     return {
-    //       url: item.url,
-    //     };
-    //   });
-    // }
+    let indexes = JSON.parse(req.body.imageIndex);
+    console.log(JSON.parse(req.body.imageIndex));
+    if (req.uploadedImages?.length) {
+      req.uploadedImages?.map((item, index) => {
+        let ind = indexes[index];
+        product.images[ind] = { url: item.url };
+      });
+    }
 
     const vendorId = req.vendor._id;
     // console.log(req.body);

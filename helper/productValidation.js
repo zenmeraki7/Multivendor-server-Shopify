@@ -10,7 +10,7 @@ const productCreationSchema = Joi.object({
   price: Joi.number().required().min(0),
   discountedPrice: Joi.number().required().min(0),
   specifications: Joi.string().optional(),
-  imageIndex: Joi.array(),
+  imageIndex: Joi.string(),
   images: Joi.optional(),
   offers: Joi.array()
     .items(
