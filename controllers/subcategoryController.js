@@ -52,12 +52,10 @@ export const updateSubcategory = async (req, res) => {
       return res.status(404).json({ message: "Subcategory not found" });
     }
 
-    res
-      .status(200)
-      .json({
-        message: "Subcategory updated successfully",
-        data: updatedsubcategory,
-      });
+    res.status(200).json({
+      message: "Subcategory updated successfully",
+      data: updatedsubcategory,
+    });
   } catch (err) {
     res
       .status(500)

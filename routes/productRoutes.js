@@ -10,6 +10,7 @@ import {
   rejectProduct,
   getAllActiveProducts,
   getAllSellerProducts,
+  updateProduct,
 } from "../controllers/productController.js";
 import {
   authenticateAdmin,
@@ -24,6 +25,7 @@ import {
   validateProductCreation,
   validateVariant,
 } from "../helper/productValidation.js";
+import { checkProductMiddleware } from "../middlewares/checkexistMiddleware.js";
 
 const router = express.Router();
 
@@ -42,8 +44,20 @@ router.post(
   authenticateVendor,
   uploadImages,
   validateProductCreation,
+  checkProductMiddleware,
   handleImageUpload,
   createProduct
+);
+
+// Vendor routes for update product
+router.post(
+  "/update/:id",
+  authenticateVendor,
+  uploadImages,
+  validateProductCreation,
+  checkProductMiddleware,
+  handleImageUpload,
+  updateProduct
 );
 
 router.get("/get-one/:productId", authentication, getProductById); // View product details
