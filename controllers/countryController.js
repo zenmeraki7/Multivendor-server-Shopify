@@ -10,6 +10,7 @@ export const countryValidationSchema = Joi.object({
     "string.empty": "Country code is required",
     "any.required": "Country code is required",
   }),
+  isActive: Joi.boolean().required(true),
 });
 
 // Create a new country

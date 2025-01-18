@@ -11,6 +11,7 @@ export const stateValidationSchema = Joi.object({
     "any.required": "Country ID is required",
   }),
   code: Joi.string().optional(),
+  isActive: Joi.boolean().required(true),
 });
 
 // Create a new state
