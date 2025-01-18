@@ -39,8 +39,42 @@ export const createBank = async (req, res) => {
 // Get all banks
 export const getBanks = async (req, res) => {
   try {
-    const banks = await Bank.find().populate("country", "name");
-    res.status(200).json(banks);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    if (req.query.id) {
+      const bank = await Bank.findById(req.query.id).populate(
+        "country",
+        "name"
+      );
+      if (!bank) {
+        return res.status(404).json({
+          success: false,
+          message: "bank not found",
+        });
+      }
+      return res.status(200).json({
+        data: bank,
+        success: true,
+        message: "bank fetched successfully",
+      });
+    }
+    const banks = await Bank.find()
+      .populate("country", "name")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+    const totalCount = await Bank.countDocuments();
+
+    res.status(200).json({
+      data: banks,
+      success: true,
+      message: "bank fetched successfully",
+      totalCount,
+      page: page,
+      limit: limit,
+      totalPages: Math.ceil(totalCount / limit),
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -62,17 +96,6 @@ export const getActiveBanks = async (req, res) => {
       );
       res.status(200).json(banks);
     }
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Get a single bank by ID
-export const getBankById = async (req, res) => {
-  try {
-    const bank = await Bank.findById(req.params.id).populate("country");
-    if (!bank) return res.status(404).json({ message: "Bank not found" });
-    res.status(200).json(bank);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
