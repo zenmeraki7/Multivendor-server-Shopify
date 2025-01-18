@@ -29,7 +29,7 @@ export const createCountry = async (req, res) => {
   }
   try {
     const { name, code, icon } = req.body;
-    const country = new Country({ name, code, icon });
+    const country = new Country(req.body);
     await country.save();
     res.status(201).json({ message: "Country created successfully", country });
   } catch (error) {

@@ -30,7 +30,7 @@ export const createState = async (req, res) => {
   }
   try {
     const { name, country, code, icon } = req.body;
-    const state = new State({ name, country, code, icon });
+    const state = new State( req.body);
     await state.save();
     res.status(201).json({ message: "State created successfully", state });
   } catch (error) {
