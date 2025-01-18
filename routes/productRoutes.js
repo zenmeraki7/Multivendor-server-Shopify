@@ -30,7 +30,7 @@ import { checkProductMiddleware } from "../middlewares/checkexistMiddleware.js";
 const router = express.Router();
 
 // Admin views all products
-router.get("/all-customers", getAllActiveProducts);
+router.get("/for-customers", getAllActiveProducts);
 
 // Admin views all products
 router.get("/allproduct", authenticateAdmin, getAllProducts);
