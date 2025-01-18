@@ -29,7 +29,7 @@ export const createBank = async (req, res) => {
   }
   try {
     const { name, country, icon } = req.body;
-    const bank = new Bank({ name, country, icon });
+    const bank = new Bank(req.body);
     await bank.save();
     res.status(201).json({ message: "Bank created successfully", bank });
   } catch (error) {
