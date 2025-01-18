@@ -4,7 +4,6 @@ import {
   deleteCountry,
   getActiveCountries,
   getCountries,
-  getCountryById,
   updateCountry,
 } from "../controllers/countryController.js";
 import { authenticateAdmin } from "../middlewares/jwtMiddleware.js";
