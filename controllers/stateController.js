@@ -11,6 +11,7 @@ export const stateValidationSchema = Joi.object({
     "any.required": "Country ID is required",
   }),
   code: Joi.string().optional(),
+  isActive: Joi.boolean().required(true),
 });
 
 // Create a new state
@@ -40,8 +41,42 @@ export const createState = async (req, res) => {
 // Get all states
 export const getStates = async (req, res) => {
   try {
-    const states = await State.find().populate("country", "name");
-    res.status(200).json(states);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    if (req.query.id) {
+      const state = await State.findById(req.query.id).populate(
+        "country",
+        "name"
+      );
+      if (!country) {
+        return res.status(404).json({
+          success: false,
+          message: "state not found",
+        });
+      }
+      return res.status(200).json({
+        data: state,
+        success: true,
+        message: "state fetched successfully",
+      });
+    }
+    const states = await State.find()
+      .populate("country", "name")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+    const totalCount = await State.countDocuments();
+
+    res.status(200).json({
+      data: states,
+      success: true,
+      message: "states fetched successfully",
+      totalCount,
+      page: page,
+      limit: limit,
+      totalPages: Math.ceil(totalCount / limit),
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -59,18 +94,6 @@ export const getActiveStates = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-// Get a single state by ID
-export const getStateById = async (req, res) => {
-  try {
-    const state = await State.findById(req.params.id).populate("country");
-    if (!state) return res.status(404).json({ message: "State not found" });
-    res.status(200).json(state);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
 // Update a state
 export const updateState = async (req, res) => {
   const { error } = stateValidationSchema.validate(req.body, {

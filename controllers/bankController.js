@@ -10,6 +10,7 @@ export const bankValidationSchema = Joi.object({
     "string.empty": "Country ID is required",
     "any.required": "Country ID is required",
   }),
+  isActive: Joi.boolean().required(true),
 });
 
 // Create a new bank
