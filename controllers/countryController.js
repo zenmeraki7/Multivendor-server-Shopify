@@ -39,8 +39,38 @@ export const createCountry = async (req, res) => {
 // Get all countries
 export const getCountries = async (req, res) => {
   try {
-    const countries = await Country.find();
-    res.status(200).json(countries);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    if (req.query.id) {
+      const country = await Country.findById(req.query.id);
+      if (!country) {
+        return res.status(404).json({
+          success: false,
+          message: "country not found",
+        });
+      }
+      return res.status(200).json({
+        data: country,
+        success: true,
+        message: "country fetched successfully",
+      });
+    }
+    const countries = await Country.find()
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+    const totalCount = await Country.countDocuments();
+
+    res.status(200).json({
+      data: countries,
+      success: true,
+      message: "country fetched successfully",
+      totalCount,
+      page: page,
+      limit: limit,
+      totalPages: Math.ceil(totalCount / limit),
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -51,17 +81,6 @@ export const getActiveCountries = async (req, res) => {
   try {
     const countries = await Country.find({ isActive: true });
     res.status(200).json(countries);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Get a single country by ID
-export const getCountryById = async (req, res) => {
-  try {
-    const country = await Country.findById(req.params.id);
-    if (!country) return res.status(404).json({ message: "Country not found" });
-    res.status(200).json(country);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
