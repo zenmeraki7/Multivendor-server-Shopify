@@ -49,7 +49,7 @@ export const getStates = async (req, res) => {
         "country",
         "name"
       );
-      if (!country) {
+      if (!state) {
         return res.status(404).json({
           success: false,
           message: "state not found",
