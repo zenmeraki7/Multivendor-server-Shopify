@@ -674,6 +674,25 @@ export const addSellerByAdmin = async (req, res) => {
     const newVendor = new Vendor(req.body);
     await newVendor.save();
 
+    // Send email to the seller with their password and a welcome message
+    const emailSubject = "Welcome to Our Platform!";
+    const emailText = `
+      Dear ${newVendor.fullName},
+
+      Welcome to our platform! Your account has been successfully created.
+
+      Here are your login details:
+      Email: ${newVendor.email}
+      Password: ${req.body.password}
+
+      Please keep your password secure and do not share it with anyone, you can update this later.
+
+      Best regards,
+      The Platform Team
+    `;
+
+    await sendEmail(newVendor.email, emailSubject, emailText);
+
     res
       .status(201)
       .json({ message: "Seller added successfully", vendor: newVendor });
