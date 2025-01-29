@@ -17,7 +17,7 @@ export const authentication = (req, res, next) => {
     req.user = decoded; // Attach decoded user data to the request
     next();
   } catch (error) {
-    return res.status(403).json({ message: "Invalid or expired token" });
+    return res.status(404).json({ message: "Invalid or expired token" });
   }
 };
 
@@ -35,12 +35,12 @@ export const authenticateAdmin = async (req, res, next) => {
     const user = await Admins.findById(decoded.id);
     // Check if user is an admin
     if (!user) {
-      return res.status(403).json({ message: "Access denied. Admins only." });
+      return res.status(404).json({ message: "Access denied. Admins only." });
     }
     req.user = decoded; // Attach decoded user data to the request
     next();
   } catch (error) {
-    return res.status(403).json({ message: "Invalid or expired token" });
+    return res.status(404).json({ message: "Invalid or expired token" });
   }
 };
 
