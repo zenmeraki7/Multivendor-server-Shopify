@@ -14,6 +14,7 @@ import subcategoryRoutes from "./routes/subcategoryRoutes.js";
 import bankRoutes from "./routes/bankRoutes.js";
 import stateRoutes from "./routes/stateRoutes.js";
 import countryRoutes from "./routes/countryRoutes.js";
+import businessTypesRoutes from "./routes//businessTYpesRoutes.js";
 import adminRoutes from "./routes/adminAuthRoutes.js";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import { logMiddleware } from "./middlewares/logMiddleware.js";
@@ -26,8 +27,7 @@ const app = express();
 app.use(express.json());
 // Specify the frontend URL in the CORS configuration
 const corsOptions = {
-  origin:
-    "https://multi-vendor-frontend-lyart.vercel.app",
+  origin: "https://multi-vendor-frontend-lyart.vercel.app",
   methods: ["GET", "POST", "PUT", "DELETE"], // Adjust based on your needs
   credentials: true, // If you're using cookies or other credentials
 };
@@ -37,7 +37,7 @@ app.use(cors());
 // Log all API calls
 app.use(logMiddleware);
 
-app.use("/api/admin",adminRoutes );
+app.use("/api/admin", adminRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/vendor", vendorRoutes);
 app.use("/api/product", productRoutes);
@@ -50,6 +50,7 @@ app.use("/api/subcategory", subcategoryRoutes);
 app.use("/api/banks", bankRoutes);
 app.use("/api/states", stateRoutes);
 app.use("/api/countries", countryRoutes);
+app.use("/api/business-type", businessTypesRoutes);
 
 // Error Middleware
 app.use(errorMiddleware);
