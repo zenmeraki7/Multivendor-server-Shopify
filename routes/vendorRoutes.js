@@ -14,6 +14,7 @@ import {
   updateCompanyIcon,
   updateBankDetails,
   updateDocumentDetails,
+  addSellerByAdmin,
 } from "../controllers/vendorController.js";
 import {
   handleImageUpload,
@@ -43,6 +44,9 @@ router.post(
 
 //Verify Vendor account
 router.post("/verify-vendor", verifyVendor);
+
+//Verify Vendor account
+router.post("/create-vendor-by-admin", authenticateAdmin, addSellerByAdmin);
 
 // Vendor login
 router.post("/login", loginVendor);

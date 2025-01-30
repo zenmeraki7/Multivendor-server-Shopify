@@ -14,6 +14,20 @@ const vendorApprovalSchema = Joi.object({
   }),
 });
 
+// Joi validation schema
+const vendorValidationSchema = Joi.object({
+  fullName: Joi.string().required().trim(),
+  email: Joi.string().email().required().trim(),
+  password: Joi.string().required().min(6),
+  phoneNum: Joi.string().required(),
+  address: Joi.string().required(),
+  zipCode: Joi.number().required(),
+  city: Joi.string().required(),
+  state: Joi.string().required(),
+  country: Joi.string().required(),
+  companyName: Joi.string().required().trim(),
+});
+
 // Create Vendor Account
 export const createVendor = async (req, res) => {
   try {
@@ -134,7 +148,7 @@ export const verifyVendor = async (req, res) => {
   }
 };
 
-// Controller to add document details
+// Controller to add document detailss
 export const addDocumentDetails = async (req, res) => {
   // Check if both document URLs (PAN and GSTIN) are provided
   if (!req.PAN_URL || !req.GSTIN_URL) {
@@ -634,5 +648,57 @@ export const updateCompanyIcon = async (req, res) => {
       message: "Error updating vendor details",
       error: error.message,
     });
+  }
+};
+
+// Controller to add a seller by admin
+export const addSellerByAdmin = async (req, res) => {
+  // Validate request body
+  const { error } = vendorValidationSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+
+  try {
+    // Check if email or phone number already exists
+    const existingVendor = await Vendor.findOne({
+      $or: [{ email: req.body.email }, { phoneNum: req.body.phoneNum }],
+    });
+    if (existingVendor) {
+      return res
+        .status(409)
+        .json({ message: "Email or phone number already in use." });
+    }
+
+    // Create new vendor
+    const newVendor = new Vendor(req.body);
+    await newVendor.save();
+
+    // Send email to the seller with their password and a welcome message
+    const emailSubject = "Welcome to Our Platform!";
+    const emailText = `
+      Dear ${newVendor.fullName},
+
+      Welcome to our platform! Your account has been successfully created.
+
+      Here are your login details:
+      Email: ${newVendor.email}
+      Password: ${req.body.password}
+
+      Please keep your password secure and do not share it with anyone, you can update this later.
+
+      Best regards,
+      The Platform Team
+    `;
+
+    await sendEmail(newVendor.email, emailSubject, emailText);
+
+    res
+      .status(201)
+      .json({ message: "Seller added successfully", vendor: newVendor });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to add seller", error: err.message });
   }
 };
