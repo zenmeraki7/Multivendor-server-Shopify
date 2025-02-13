@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import { sendEmail } from "../utils/sendEmail.js";
 import Otp from "../models/Otp.js";
 import { vendorUpdateSchema } from "../helper/vendorValidation.js";
+import asyncHandler from "express-async-handler";
 
 // Approve/Reject Vendor Schema
 const vendorApprovalSchema = Joi.object({
@@ -13,7 +14,19 @@ const vendorApprovalSchema = Joi.object({
     "string.empty": "Verification remarks are required.",
   }),
 });
+const forgotPasswordSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    "string.empty": "Email is required.",
+    "string.email": "Email must be a valid email address.",
+  }),
+});
 
+const resetPasswordSchema = Joi.object({
+  password: Joi.string().min(8).required().messages({
+    "string.empty": "Password is required.",
+    "string.min": "Password must be at least 8 characters long.",
+  }),
+});
 // Joi validation schema
 const vendorValidationSchema = Joi.object({
   fullName: Joi.string().required().trim(),
@@ -702,3 +715,74 @@ export const addSellerByAdmin = async (req, res) => {
       .json({ message: "Failed to add seller", error: err.message });
   }
 };
+
+export const forgotPasswordVendor = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  // Validate Input
+  const { error } = forgotPasswordSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    return res.status(400).json({
+      message: "Validation error",
+      errors: error.details.map((err) => ({
+        field: err.path[0],
+        message: err.message,
+      })),
+    });
+  }
+
+  // Check if vendor exists
+  const vendor = await Vendor.findOne({ email });
+  if (!vendor) {
+    return res.status(404).json({
+      message: "No vendor found with this email",
+    });
+  }
+
+  // Generate reset token
+  const resetToken = jwt.sign({ id: vendor._id }, process.env.JWT_SECRET, {
+    expiresIn: "1h", // Token valid for 1 hour
+  });
+
+  // Send email with reset link
+  const resetUrl = `${process.env.CLIENT_SELLER_URL}/vendor/reset-password/${resetToken}`;
+  await sendEmail(
+    email,
+    "Vendor Password Reset Request",
+    `Click the link to reset your password: ${resetUrl}`
+  );
+
+  res.status(200).json({
+    message: "Password reset email sent. Please check your inbox.",
+  });
+});
+export const resetPasswordVendor = asyncHandler(async (req, res) => {
+  const { newPassword } = req.body;
+  const token = req.params.token;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const vendor = await Vendor.findById(decoded.id);
+    console.log(vendor);
+    
+    if (!vendor) {
+      return res.status(404).json({ message: "Invalid or expired token." });
+    }
+
+    // Hash new password and update
+    console.log(newPassword);
+    
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    console.log(hashedPassword);
+    
+    vendor.password = hashedPassword;
+    await vendor.save();
+console.log("----");
+
+    res.status(200).json({ message: "Password reset successfully." });
+     
+  } catch (error) {
+    
+    
+    res.status(500).json({ message: "Error resetting password.", error: error.message });
+  }
+});

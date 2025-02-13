@@ -315,17 +315,27 @@ export const getAllProducts = async (req, res) => {
 // Get all seller products (for seller to view all)
 export const getAllSellerProducts = async (req, res) => {
   try {
+    const query = {seller:req.vendor._id}
+    const {inStock,price,isActive,category,subcategory,categoryType} = req.query;    
+    if(inStock) query.inStock = inStock 
+    if(price) query.price = price
+    if(isActive) query.isActive = isActive
+    if (category) query.category = category;
+    if (subcategory) query.subcategory = subcategory;
+    if (categoryType) query.categoryType = categoryType;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-
+// status,catType(3)
     // Calculate the number of documents to skip
     const skip = (page - 1) * limit;
 
-    const products = await Product.find({ seller: req.vendor._id })
+    const products = await Product.find(query)
       .select(
         "title thumbnail discountedPrice brand categoryType stock isApproved createdAt"
       )
-      .populate("categoryType", "name")
+      .populate("categoryType", "name") 
+      .populate("category", "name")
+      .populate("subcategory", "name") 
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });

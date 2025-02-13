@@ -30,9 +30,9 @@ const productSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true }, // Product name
     description: { type: String, required: true }, // Detailed description
     brand: { type: String, required: true }, // Brand name
-    category: {
+    category: { 
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
+      ref: "Category", 
       required: true,
     }, // Main category
     subcategory: {
