@@ -597,6 +597,21 @@ export const rejectVendor = async (req, res) => {
       .json({ message: "Error rejecting vendor.", error: error.message });
   }
 };
+//  Vendor Blocking
+export const blockVendor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedVendor = await Vendor.findByIdAndUpdate(id, { isBlocked: true }, { new: true });
+
+    if (!updatedVendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    res.status(200).json({ message: "Vendor blocked successfully", vendor: updatedVendor });
+  } catch (error) {
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
 
 export const updateVendorDetails = async (req, res) => {
   try {

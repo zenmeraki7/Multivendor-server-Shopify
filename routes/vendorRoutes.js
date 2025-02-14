@@ -17,6 +17,7 @@ import {
   addSellerByAdmin,
   forgotPasswordVendor,
   resetPasswordVendor,
+  blockVendor,
 } from "../controllers/vendorController.js";
 import {
   handleImageUpload,
@@ -67,6 +68,9 @@ router.put("/approve/:id", authenticateAdmin, approveVendor);
 
 // Admin rejects a vendor
 router.put("/reject/:id", authenticateAdmin, rejectVendor);
+
+// Admin Blocks a vendor
+router.put("/blocks/:id", authenticateAdmin,blockVendor)
 
 // Route to add document details
 router.put(
