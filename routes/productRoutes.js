@@ -36,7 +36,7 @@ router.get("/for-customers", getAllActiveProducts);
 // Admin views all products
 router.get("/allproduct", authenticateAdmin, getAllProducts);
 
-// Admin views all products
+// Seller views all products
 router.get("/all-seller-product", authenticateVendor, getAllSellerProducts);
 
 // Vendor routes

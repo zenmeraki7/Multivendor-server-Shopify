@@ -3,8 +3,7 @@
 import Vendor from "../models/Vendor.js";
 export const checkVendorBlocked = async (req, res, next) => {
 try{
-      const id= req.user?.id
-  
+  const id = req.vendor?.id;  
       if (!id )  {
         return res.status(401).json({ 
           message: "Unauthorized - Vendor ID not found" 
