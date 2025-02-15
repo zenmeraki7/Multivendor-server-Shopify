@@ -325,7 +325,7 @@ export const getAllProducts = async (req, res) => {
 // Get all seller products (for seller to view all)
 export const getAllSellerProducts = async (req, res) => {
   try {
-    const query = {seller:req.vendor._id}
+    const query = {}
     const {inStock,price,isActive,category,subcategory,categoryType} = req.query;    
     if(inStock) query.inStock = inStock 
     if(price) query.price = price
