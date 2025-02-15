@@ -26,6 +26,7 @@ import {
   validateVariant,
 } from "../helper/productValidation.js";
 import { checkProductMiddleware } from "../middlewares/checkexistMiddleware.js";
+import { checkVendorBlocked } from "../middlewares/checkVendorBlocked.js";
 
 const router = express.Router();
 
@@ -42,6 +43,7 @@ router.get("/all-seller-product", authenticateVendor, getAllSellerProducts);
 router.post(
   "/create",
   authenticateVendor,
+checkVendorBlocked,
   uploadImages,
   validateProductCreation,
   checkProductMiddleware,
@@ -53,6 +55,7 @@ router.post(
 router.post(
   "/update/:id",
   authenticateVendor,
+  checkVendorBlocked,
   uploadImages,
   validateProductCreation,
   checkProductMiddleware,
@@ -70,6 +73,7 @@ router.put("/reject/:id", authenticateAdmin, rejectProduct); // Admin approves/r
 router.post(
   "/product-variant/:productId",
   authenticateVendor,
+  checkVendorBlocked,
   uploadImages,
   validateVariant,
   handleImageUpload,
@@ -79,6 +83,7 @@ router.post(
 router.post(
   "/product-variant/:productId/:variantId",
   authenticateVendor,
+  checkVendorBlocked,
   uploadImages,
   validateVariant,
   handleImageUpload,
