@@ -22,7 +22,10 @@ export const authentication = (req, res, next) => {
 };
 
 export const authenticateAdmin = async (req, res, next) => {
+  console.log("hey");
+  
   const authHeader = req.headers.authorization;
+  console.log(authHeader);
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "No token provided" });

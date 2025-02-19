@@ -36,7 +36,7 @@ const adminSchema = new mongoose.Schema(
     isVerified: {
       type: Boolean,
       default: true, // Admin accounts are usually verified by default
-    },
+    }, 
     isBlocked: {
       type: Boolean,
       default: false, // Admin accounts can be blocked if needed

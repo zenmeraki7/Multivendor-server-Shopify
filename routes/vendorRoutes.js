@@ -15,6 +15,9 @@ import {
   updateBankDetails,
   updateDocumentDetails,
   addSellerByAdmin,
+  forgotPasswordVendor,
+  resetPasswordVendor,
+  blockVendor,
 } from "../controllers/vendorController.js";
 import {
   handleImageUpload,
@@ -65,6 +68,9 @@ router.put("/approve/:id", authenticateAdmin, approveVendor);
 
 // Admin rejects a vendor
 router.put("/reject/:id", authenticateAdmin, rejectVendor);
+
+// Admin Blocks a vendor
+router.put("/blocks/:id", authenticateAdmin,blockVendor)
 
 // Route to add document details
 router.put(
@@ -118,4 +124,7 @@ router.put(
 // Route to update personal details
 router.put("/update-details", authentication, updateVendorDetails);
 
+// Route to update password 
+router.post("/forgot-password", forgotPasswordVendor);
+router.post("/reset-password/:token", resetPasswordVendor);
 export default router;
