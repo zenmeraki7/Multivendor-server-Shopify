@@ -745,7 +745,7 @@ export const forgotPasswordVendor = asyncHandler(async (req, res) => {
   });
 
   // Send email with reset link
-  const resetUrl = `${process.env.CLIENT_SELLER_URL}/vendor/reset-password/${resetToken}`;
+  const resetUrl = `${process.env.CLIENT_SELLER_URL}/reset-password/${resetToken}`;
   await sendEmail(
     email,
     "Vendor Password Reset Request",
