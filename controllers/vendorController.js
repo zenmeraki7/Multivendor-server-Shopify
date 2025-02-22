@@ -412,9 +412,23 @@ export const loginVendor = async (req, res) => {
     });
   }
 };
-
+// admin view all vendors
 export const getAllVendors = async (req, res) => {
   try {
+     const query = {}
+     const {isVerified,isBlocked,state,country, minSales, maxSales } = req.query
+     
+     if(isVerified && isVerified !== "all")query.isVerified = isVerified;
+     if(isBlocked && isBlocked !== "all")query.isBlocked = isBlocked;
+     if(state && state !== "all") query.state = state;
+     if(country && country !== "all") query.country = country;
+     
+     // Filter by totalSales range
+    if (minSales || maxSales) {
+      query["salesData.totalSales"] = {}; // Initialize filter object
+      if (minSales) query["salesData.totalSales"].$gte = parseFloat(minSales); // Minimum sales
+      if (maxSales) query["salesData.totalSales"].$lte = parseFloat(maxSales); // Maximum sales
+    }
     // Extract page and limit from query parameters, defaulting to page 1 and 10 items per page
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -423,7 +437,7 @@ export const getAllVendors = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Fetch vendors with pagination
-    const vendors = await Vendor.find()
+    const vendors = await Vendor.find(query)
       .select(
         "fullName email phoneNum country state companyName salesData companyIcon isVerified"
       )
@@ -434,7 +448,7 @@ export const getAllVendors = async (req, res) => {
       .sort({ createdAt: -1 });
 
     // Get the total count of vendors
-    const totalVendors = await Vendor.countDocuments();
+    const totalVendors = await Vendor.countDocuments(query)
 
     res.status(200).json({
       message: "Vendors fetched successfully",
