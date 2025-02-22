@@ -290,6 +290,7 @@ export const getAllProducts = async (req, res) => {
     if (subcategory && subcategory !== "all") query.subcategory = subcategory;
     if (categoryType && categoryType !== "all") query.categoryType = categoryType;
 
+    
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
