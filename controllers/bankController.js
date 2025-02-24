@@ -40,9 +40,12 @@ export const createBank = async (req, res) => {
 // Get all banks
 export const getBanks = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const query = {}
+    const { isActive, country, page = 1, limit = 10, id } = req.query;
+    if (isActive && isActive !== "all") query.isActive = isActive === "true";
+    if (country && country !== "all") query.country = country;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
     if (req.query.id) {
       const bank = await Bank.findById(req.query.id).populate(
         "country",
@@ -60,21 +63,21 @@ export const getBanks = async (req, res) => {
         message: "bank fetched successfully",
       });
     }
-    const banks = await Bank.find()
+    const banks = await Bank.find(query)
       .populate("country", "name")
       .skip(skip)
-      .limit(limit)
+      .limit(parseInt(limit))
       .sort({ createdAt: -1 });
-    const totalCount = await Bank.countDocuments();
+    const totalCount = await Bank.countDocuments(query);
 
     res.status(200).json({
       data: banks,
       success: true,
       message: "bank fetched successfully",
       totalCount,
-      page: page,
-      limit: limit,
-      totalPages: Math.ceil(totalCount / limit),
+      page: parseInt(page), 
+      limit: parseInt(limit), 
+      totalPages: Math.ceil(totalCount / parseInt(limit)), 
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
