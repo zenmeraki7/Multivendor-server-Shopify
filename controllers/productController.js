@@ -279,7 +279,7 @@ export const getAllActiveProducts = async (req, res) => {
 // Get all products (for admin to view all)
 export const getAllProducts = async (req, res) => {
   try {
-    const query = {seller:req.vendor._id}
+    const query = {}
     const {inStock,price,isActive,category,subcategory,categoryType} = req.query;    
     if(inStock) query.inStock = inStock 
     if(price) query.price = price
