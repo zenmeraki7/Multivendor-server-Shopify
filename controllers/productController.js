@@ -279,52 +279,6 @@ export const getAllActiveProducts = async (req, res) => {
 // Get all products (for admin to view all)
 export const getAllProducts = async (req, res) => {
   try {
-    const query = {}
-    const {inStock,price,isActive,category,subcategory,categoryType} = req.query;    
-    if(inStock) query.inStock = inStock 
-    if(price) query.price = price
-    if(isActive) query.isActive = isActive
-    if (category) query.category = category;
-    if (subcategory) query.subcategory = subcategory;
-    if (categoryType) query.categoryType = categoryType;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-
-    // Calculate the number of documents to skip
-    const skip = (page - 1) * limit;
-
-    const products = await Product.find(query)
-      .select(
-        "title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt"
-      )
-      .populate("seller", "companyName companyIcon")
-      .populate("categoryType", "name")
-      .populate("category", "name")
-      .populate("subcategory", "name") 
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 });
-
-    const totalProducts = await Product.countDocuments();
-
-    res.status(200).json({
-      message: "Products fetched successfully",
-      data: products,
-      success: true,
-      currentPage: page,
-      totalPages: Math.ceil(totalProducts / limit),
-      totalItems: totalProducts,
-      itemsPerPage: limit,
-    });
-  } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error fetching products", error: err.message });
-  }
-};
-// Get all seller products (for seller to view all)
-export const getAllSellerProducts = async (req, res) => {
-  try {
     const query = {seller:req.vendor._id}
     const {inStock,price,isActive,category,subcategory,categoryType} = req.query;    
     if(inStock) query.inStock = inStock 
@@ -335,23 +289,68 @@ export const getAllSellerProducts = async (req, res) => {
     if (categoryType) query.categoryType = categoryType;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-// status,catType(3)
-    // Calculate the number of documents to skip
     const skip = (page - 1) * limit;
 
     const products = await Product.find(query)
-      .select(
-        "title thumbnail discountedPrice brand categoryType stock isApproved createdAt"
-      )
-      .populate("categoryType", "name") 
+      .select("title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt")
+      .populate("seller", "companyName companyIcon")
+      .populate("categoryType", "name")
       .populate("category", "name")
-      .populate("subcategory", "name") 
+      .populate("subcategory", "name")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
 
+    const totalProducts = await Product.countDocuments(query); // Use the same query to count filtered results
+
+    res.status(200).json({
+      message: "Products fetched successfully",
+      data: products,
+      success: true,
+      currentPage: page,
+      totalPages: Math.ceil(totalProducts / limit),
+      totalItems: totalProducts,
+      itemsPerPage: limit,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching products", error: err.message });
+  }
+};
+
+// Get all seller products (for seller to view all)
+export const getAllSellerProducts = async (req, res) => {
+  try {
+    const query = { seller: req.vendor._id }; // Base query for the seller
+
+    const { inStock, price, isActive, category, subcategory, categoryType } = req.query;
+
+    // Apply filters only if they are not "all"
+    if (inStock && inStock !== "all") query.inStock = inStock;
+    if (price && price !== "all") query.price = price;
+    if (isActive && isActive !== "all") query.isActive = isActive;
+    if (category && category !== "all") query.category = category;
+    if (subcategory && subcategory !== "all") query.subcategory = subcategory;
+    if (categoryType && categoryType !== "all") query.categoryType = categoryType;
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    // Calculate the number of documents to skip
+    const skip = (page - 1) * limit;
+
+    // Fetch filtered products
+    const products = await Product.find(query)
+      .select("title thumbnail discountedPrice brand categoryType stock isApproved createdAt")
+      .populate("categoryType", "name")
+      .populate("category", "name")
+      .populate("subcategory", "name")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    // Get total product count (without filters)
     const totalProducts = await Product.countDocuments({
-      seller: req.params.id,
+      seller: req.vendor._id,
     });
 
     res.status(200).json({
@@ -364,11 +363,10 @@ export const getAllSellerProducts = async (req, res) => {
       itemsPerPage: limit,
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error fetching products", error: err.message });
+    res.status(500).json({ message: "Error fetching products", error: err.message });
   }
 };
+
 
 // Get a specific product by ID (for vendor and admin)
 export const getProductById = async (req, res) => {
