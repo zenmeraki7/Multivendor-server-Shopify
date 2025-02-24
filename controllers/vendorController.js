@@ -415,40 +415,53 @@ export const loginVendor = async (req, res) => {
 // admin view all vendors
 export const getAllVendors = async (req, res) => {
   try {
-     const query = {}
-     const {isVerified,isBlocked,state,country, minSales, maxSales } = req.query
-     
-     if(isVerified && isVerified !== "all")query.isVerified = isVerified;
-     if(isBlocked && isBlocked !== "all")query.isBlocked = isBlocked;
-     if(state && state !== "all") query.state = state;
-     if(country && country !== "all") query.country = country;
-     
-     // Filter by totalSales range
-    if (minSales || maxSales) {
-      query["salesData.totalSales"] = {}; // Initialize filter object
-      if (minSales) query["salesData.totalSales"].$gte = parseFloat(minSales); // Minimum sales
-      if (maxSales) query["salesData.totalSales"].$lte = parseFloat(maxSales); // Maximum sales
+    const query = {};
+    const { isVerified, isBlocked, state, country, minSales, maxSales } = req.query;
+
+    // Convert boolean filters
+    if (isVerified && isVerified !== "all") query.isVerified = isVerified === "true";
+    if (isBlocked && isBlocked !== "all") query.isBlocked = isBlocked === "true";
+
+    // Convert state name to ObjectId
+    if (state && state !== "all") {
+      const stateDoc = await State.findOne({ name: state });
+      if (stateDoc) query.state = stateDoc._id;
+      else return res.status(400).json({ message: "Invalid state name" });
     }
-    // Extract page and limit from query parameters, defaulting to page 1 and 10 items per page
+
+    // Convert country name to ObjectId
+    if (country && country !== "all") {
+      const countryDoc = await Country.findOne({ name: country });
+      if (countryDoc) query.country = countryDoc._id;
+      else return res.status(400).json({ message: "Invalid country name" });
+    }
+
+    // Handle sales filtering
+    if (minSales || maxSales) {
+      query["salesData.totalSales"] = {};
+      if (minSales) query["salesData.totalSales"].$gte = parseFloat(minSales);
+      if (maxSales) query["salesData.totalSales"].$lte = parseFloat(maxSales);
+    }
+    if (Object.keys(query["salesData.totalSales"]).length === 0) {
+      delete query["salesData.totalSales"];
+    }
+
+    // Pagination
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-
-    // Calculate the number of documents to skip
     const skip = (page - 1) * limit;
 
     // Fetch vendors with pagination
     const vendors = await Vendor.find(query)
-      .select(
-        "fullName email phoneNum country state companyName salesData companyIcon isVerified"
-      )
-      .populate("country", "name") // Populate 'country' field, selecting only the 'name' field
-      .populate("state", "name") // Populate 'state' field, selecting only the 'name' field
+      .select("fullName email phoneNum country state companyName salesData companyIcon isVerified")
+      .populate("country", "name")
+      .populate("state", "name")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
 
-    // Get the total count of vendors
-    const totalVendors = await Vendor.countDocuments(query)
+    // Get total vendor count
+    const totalVendors = await Vendor.countDocuments(query);
 
     res.status(200).json({
       message: "Vendors fetched successfully",
@@ -460,11 +473,10 @@ export const getAllVendors = async (req, res) => {
       success: true,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching vendors.", error: error.message });
+    res.status(500).json({ message: "Error fetching vendors.", error: error.message });
   }
 };
+
 
 // Get Single Vendor (Admin View)
 export const getVendorById = async (req, res) => {
