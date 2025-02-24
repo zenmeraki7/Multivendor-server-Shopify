@@ -41,9 +41,18 @@ export const createState = async (req, res) => {
 // Get all states
 export const getStates = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const query = {};
+    const { isActive, country, page = 1, limit = 10, id, search } = req.query;
+
+    if (isActive && isActive !== "all") query.isActive = isActive === "true";
+    if (country && country !== "all") query.country = country;
+
+    // Search logic: Case-insensitive search for bank name
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
     if (req.query.id) {
       const state = await State.findById(req.query.id).populate(
         "country",
@@ -61,21 +70,21 @@ export const getStates = async (req, res) => {
         message: "state fetched successfully",
       });
     }
-    const states = await State.find()
+    const states = await State.find(query)
       .populate("country", "name")
       .skip(skip)
-      .limit(limit)
+      .limit(parseInt(limit))
       .sort({ createdAt: -1 });
-    const totalCount = await State.countDocuments();
+    const totalCount = await State.countDocuments(query);
 
     res.status(200).json({
       data: states,
       success: true,
       message: "states fetched successfully",
       totalCount,
-      page: page,
-      limit: limit,
-      totalPages: Math.ceil(totalCount / limit),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(totalCount / parseInt(limit)),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -88,9 +88,18 @@ export const deleteCategory = async (req, res) => {
 // Get All Categories
 export const getAllCategories = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const query = {};
+    const { isActive, categoryType, page = 1, limit = 10, id, search } = req.query;
+
+    if (isActive && isActive !== "all") query.isActive = isActive === "true";
+    if (categoryType && categoryType !== "all") query.categoryType = categoryType;
+
+    // Search logic: Case-insensitive search for bank name
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
     if (req.query.id) {
       const category = await Category.findById(req.query.id);
@@ -107,22 +116,22 @@ export const getAllCategories = async (req, res) => {
       });
     }
 
-    const categories = await Category.find()
+    const categories = await Category.find(query)
       .populate("categoryType", "name")
       .skip(skip)
-      .limit(limit)
+      .limit(parseInt(limit))
       .sort({ createdAt: -1 });
 
-    const totalCount = await Category.countDocuments();
+    const totalCount = await Category.countDocuments(query);
 
     res.status(200).json({
       data: categories,
       success: true,
       message: "Categories fetched successfully",
       totalCount,
-      page: page,
-      limit: limit,
-      totalPages: Math.ceil(totalCount / limit),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(totalCount / parseInt(limit)),
     });
   } catch (err) {
     res.status(500).json({

@@ -85,11 +85,18 @@ export const deleteSubcategory = async (req, res) => {
 // Get All Subcategories
 export const getAllSubcategories = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const query = {};
+    const { isActive, category, page = 1, limit = 10, id, search } = req.query;
 
-    if (req.query.id) {
+    if (isActive && isActive !== "all") query.isActive = isActive === "true";
+    if (category && category !== "all") query.category = category;
+
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    if (id) {
       const subcategory = await Subcategory.findById(req.query.id);
       if (!subcategory) {
         return res.status(404).json({
@@ -104,22 +111,22 @@ export const getAllSubcategories = async (req, res) => {
       });
     }
 
-    const subcategories = await Subcategory.find()
+    const subcategories = await Subcategory.find(query)
       .populate("category", "name")
       .skip(skip)
-      .limit(limit)
+      .limit(parseInt(limit))
       .sort({ createdAt: -1 });
 
-    const totalCount = await Subcategory.countDocuments();
+    const totalCount = await Subcategory.countDocuments(query);
 
     res.status(200).json({
       data: subcategories,
       success: true,
       message: "Sub Categories fetched successfully",
       totalCount,
-      page: page,
-      limit: limit,
-      totalPages: Math.ceil(totalCount / limit),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(totalCount / parseInt(limit)),
     });
   } catch (err) {
     res
