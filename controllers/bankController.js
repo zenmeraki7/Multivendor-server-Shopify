@@ -1,4 +1,5 @@
 import Bank from "../models/Bank.js";
+import mongoose from "mongoose";
 import Joi from "joi";
 
 export const bankValidationSchema = Joi.object({
@@ -38,6 +39,8 @@ export const createBank = async (req, res) => {
 };
 
 // Get all banks
+
+
 export const getBanks = async (req, res) => {
   try {
     const query = {};
@@ -46,14 +49,22 @@ export const getBanks = async (req, res) => {
     if (isActive && isActive !== "all") query.isActive = isActive === "true";
     if (country && country !== "all") query.country = country;
 
-    // Search logic: Case-insensitive search for bank name
+    // If search query exists, find matching country IDs first
+    let countryIds = [];
     if (search) {
-      query.name = { $regex: search, $options: "i" };
+      const Country = mongoose.model("Country");
+      countryIds = await Country.find({
+        name: { $regex: search, $options: "i" },
+      }).select("_id");
+
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { country: { $in: countryIds.map((c) => c._id) } }, // Match country ID
+      ];
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Fetch a single bank by ID
     if (id) {
       const bank = await Bank.findById(id).populate("country", "name");
       if (!bank) {
@@ -69,7 +80,6 @@ export const getBanks = async (req, res) => {
       });
     }
 
-    // Fetch banks with search & filters
     const banks = await Bank.find(query)
       .populate("country", "name")
       .skip(skip)
@@ -88,10 +98,13 @@ export const getBanks = async (req, res) => {
       totalPages: Math.ceil(totalCount / parseInt(limit)),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: "Error retrieving banks",
+      error: error.message,
+      success: false,
+    });
   }
 };
-
 
 // Get all active banks
 export const getActiveBanks = async (req, res) => {

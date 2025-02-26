@@ -1,4 +1,6 @@
 import State from "../models/State.js";
+import mongoose from "mongoose";
+
 import Joi from "joi";
 
 export const stateValidationSchema = Joi.object({
@@ -47,9 +49,21 @@ export const getStates = async (req, res) => {
     if (isActive && isActive !== "all") query.isActive = isActive === "true";
     if (country && country !== "all") query.country = country;
 
-    // Search logic: Case-insensitive search for bank name
+    // Search logic: Updated to include country search
     if (search) {
-      query.name = { $regex: search, $options: "i" };
+      // First, look for countries that match the search term
+      const Country = mongoose.model("Country");
+      const matchingCountries = await Country.find({
+        name: { $regex: search, $options: "i" }
+      }).select('_id');
+      
+      const countryIds = matchingCountries.map(c => c._id);
+      
+      // Create a query with $or to match either state name or country
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },  // Search in state name
+        { country: { $in: countryIds } }              // Search in countries
+      ];
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);

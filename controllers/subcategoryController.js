@@ -1,5 +1,5 @@
 import Subcategory from "../models/Subcategory.js";
-
+import Category from "../models/Category.js";
 // Create Subcategory
 export const createSubcategory = async (req, res) => {
   if (!req.image) {
@@ -91,13 +91,24 @@ export const getAllSubcategories = async (req, res) => {
     if (isActive && isActive !== "all") query.isActive = isActive === "true";
     if (category && category !== "all") query.category = category;
 
+    // If search query exists, find matching category IDs first
+    let categoryIds = [];
     if (search) {
-      query.name = { $regex: search, $options: "i" };
+      categoryIds = await Category.find({
+        name: { $regex: search, $options: "i" },
+      }).select("_id");
+
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { category: { $in: categoryIds.map((cat) => cat._id) } }, // Match category ID
+      ];
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
+
     if (id) {
-      const subcategory = await Subcategory.findById(req.query.id);
+      const subcategory = await Subcategory.findById(id).populate("category", "name");
       if (!subcategory) {
         return res.status(404).json({
           success: false,
@@ -129,9 +140,11 @@ export const getAllSubcategories = async (req, res) => {
       totalPages: Math.ceil(totalCount / parseInt(limit)),
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error retrieving subcategories", error: err.message });
+    res.status(500).json({
+      message: "Error retrieving subcategories",
+      error: err.message,
+      success: false,
+    });
   }
 };
 
