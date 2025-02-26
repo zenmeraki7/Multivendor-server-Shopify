@@ -83,9 +83,22 @@ export const deleteCategoryType = async (req, res) => {
 // Get All Categories with Pagination
 export const getAllCategoriesTypes = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const query = {};
+    const { isActive, page = 1, limit = 10, search, id } = req.query;
+
+    // Status filtering (Convert isActive to boolean)
+    if (isActive && isActive !== "all") query.isActive = isActive === "true";
+
+ 
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    // Pagination calculations
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
     if (req.query.id) {
       const category = await CategoryType.findById(req.query.id);
@@ -102,20 +115,20 @@ export const getAllCategoriesTypes = async (req, res) => {
       });
     }
 
-    const categories = await CategoryType.find()
+    const categories = await CategoryType.find(query)
       .skip(skip)
-      .limit(limit)
+      .limit(parseInt(limit))
       .sort({ createdAt: -1 });
-    const totalCount = await CategoryType.countDocuments();
+    const totalCount = await CategoryType.countDocuments(query);
 
     res.status(200).json({
       data: categories,
       success: true,
       message: "Categories fetched successfully",
       totalCount,
-      page: page,
-      limit: limit,
-      totalPages: Math.ceil(totalCount / limit),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(totalCount / parseInt(limit)),
     });
   } catch (err) {
     res.status(500).json({
