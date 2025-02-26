@@ -89,9 +89,12 @@ export const getAllCategoriesTypes = async (req, res) => {
     // Status filtering (Convert isActive to boolean)
     if (isActive && isActive !== "all") query.isActive = isActive === "true";
 
-    // Search filtering (Case-insensitive search by name)
+ 
     if (search) {
-      query.name = { $regex: search, $options: "i" };
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } }
+      ];
     }
 
     // Pagination calculations

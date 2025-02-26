@@ -1,5 +1,5 @@
 import Category from "../models/Category.js";
-
+import CategoryType from "../models/CategoryType.js"; 
 export const createCategory = async (req, res) => {
   if (!req.image) {
     return res
@@ -94,15 +94,24 @@ export const getAllCategories = async (req, res) => {
     if (isActive && isActive !== "all") query.isActive = isActive === "true";
     if (categoryType && categoryType !== "all") query.categoryType = categoryType;
 
-    // Search logic: Case-insensitive search for bank name
+    // If search query exists, find matching categoryType IDs first
+    let categoryTypeIds = [];
     if (search) {
-      query.name = { $regex: search, $options: "i" };
+      categoryTypeIds = await CategoryType.find({
+        name: { $regex: search, $options: "i" },
+      }).select("_id");
+
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { categoryType: { $in: categoryTypeIds.map((type) => type._id) } }, // Match categoryType ID
+      ];
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    if (req.query.id) {
-      const category = await Category.findById(req.query.id);
+    if (id) {
+      const category = await Category.findById(id).populate("categoryType", "name");
       if (!category) {
         return res.status(404).json({
           success: false,
@@ -141,6 +150,7 @@ export const getAllCategories = async (req, res) => {
     });
   }
 };
+
 
 // Get All Categories
 export const getAllActiveCategories = async (req, res) => {

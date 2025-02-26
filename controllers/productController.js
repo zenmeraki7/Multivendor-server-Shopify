@@ -326,7 +326,7 @@ export const getAllSellerProducts = async (req, res) => {
   try {
     const query = { seller: req.vendor._id }; // Base query for the seller
 
-    const { inStock, price, isActive, category, subcategory, categoryType } = req.query;
+    const { inStock, price, isActive, category, subcategory, categoryType, search } = req.query;
 
     // Apply filters only if they are not "all"
     if (inStock && inStock !== "all") query.inStock = inStock;
@@ -335,6 +335,16 @@ export const getAllSellerProducts = async (req, res) => {
     if (category && category !== "all") query.category = category;
     if (subcategory && subcategory !== "all") query.subcategory = subcategory;
     if (categoryType && categoryType !== "all") query.categoryType = categoryType;
+    
+    // Add search functionality
+    if (search && search.trim() !== "") {
+      // Create a text search query using regex for case-insensitive search
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        // Add more fields if needed for search
+      ];
+    }
 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -352,18 +362,16 @@ export const getAllSellerProducts = async (req, res) => {
       .limit(limit)
       .sort({ createdAt: -1 });
 
-    // Get total product count (without filters)
-    const totalProducts = await Product.countDocuments({
-      seller: req.vendor._id,
-    });
+    // Get total count with the current filters applied
+    const totalFilteredProducts = await Product.countDocuments(query);
 
     res.status(200).json({
       message: "Products fetched successfully",
       data: products,
       success: true,
       currentPage: page,
-      totalPages: Math.ceil(totalProducts / limit),
-      totalItems: totalProducts,
+      totalPages: Math.ceil(totalFilteredProducts / limit),
+      totalItems: totalFilteredProducts,
       itemsPerPage: limit,
     });
   } catch (err) {
