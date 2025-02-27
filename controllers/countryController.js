@@ -40,42 +40,59 @@ export const createCountry = async (req, res) => {
 // Get all countries
 export const getCountries = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    if (req.query.id) {
-      const country = await Country.findById(req.query.id);
+    const query = {};
+    const { isActive, page = 1, limit = 10, search, id } = req.query;
+
+    // Status filtering (Convert isActive to boolean)
+    if (isActive && isActive !== "all") query.isActive = isActive === "true";
+
+    // Search filtering (Case-insensitive search by name)
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    // Pagination calculations
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Fetch a single country by ID if provided
+    if (id) {
+      const country = await Country.findById(id);
       if (!country) {
         return res.status(404).json({
           success: false,
-          message: "country not found",
+          message: "Country not found",
         });
       }
       return res.status(200).json({
         data: country,
         success: true,
-        message: "country fetched successfully",
+        message: "Country fetched successfully",
       });
     }
-    const countries = await Country.find()
+
+    // Fetch countries with filtering and pagination
+    const countries = await Country.find(query)
       .skip(skip)
-      .limit(limit)
+      .limit(parseInt(limit))
       .sort({ createdAt: -1 });
-    const totalCount = await Country.countDocuments();
+
+    // Count total filtered results
+    const totalCount = await Country.countDocuments(query);
 
     res.status(200).json({
       data: countries,
       success: true,
-      message: "country fetched successfully",
+      message: "Countries fetched successfully",
       totalCount,
-      page: page,
-      limit: limit,
-      totalPages: Math.ceil(totalCount / limit),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(totalCount / parseInt(limit)),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // Get all active countries
 export const getActiveCountries = async (req, res) => {
