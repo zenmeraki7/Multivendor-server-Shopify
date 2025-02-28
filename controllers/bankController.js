@@ -1,4 +1,5 @@
 import Bank from "../models/Bank.js";
+import mongoose from "mongoose";
 import Joi from "joi";
 
 export const bankValidationSchema = Joi.object({
@@ -38,49 +39,70 @@ export const createBank = async (req, res) => {
 };
 
 // Get all banks
+
+
 export const getBanks = async (req, res) => {
   try {
-    const query = {}
-    const { isActive, country, page = 1, limit = 10, id } = req.query;
+    const query = {};
+    const { isActive, country, page = 1, limit = 10, id, search } = req.query;
+
     if (isActive && isActive !== "all") query.isActive = isActive === "true";
     if (country && country !== "all") query.country = country;
 
+    // If search query exists, find matching country IDs first
+    let countryIds = [];
+    if (search) {
+      const Country = mongoose.model("Country");
+      countryIds = await Country.find({
+        name: { $regex: search, $options: "i" },
+      }).select("_id");
+
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { country: { $in: countryIds.map((c) => c._id) } }, // Match country ID
+      ];
+    }
+
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    if (req.query.id) {
-      const bank = await Bank.findById(req.query.id).populate(
-        "country",
-        "name"
-      );
+
+    if (id) {
+      const bank = await Bank.findById(id).populate("country", "name");
       if (!bank) {
         return res.status(404).json({
           success: false,
-          message: "bank not found",
+          message: "Bank not found",
         });
       }
       return res.status(200).json({
         data: bank,
         success: true,
-        message: "bank fetched successfully",
+        message: "Bank fetched successfully",
       });
     }
+
     const banks = await Bank.find(query)
       .populate("country", "name")
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
+
     const totalCount = await Bank.countDocuments(query);
 
     res.status(200).json({
       data: banks,
       success: true,
-      message: "bank fetched successfully",
+      message: "Banks fetched successfully",
       totalCount,
-      page: parseInt(page), 
-      limit: parseInt(limit), 
-      totalPages: Math.ceil(totalCount / parseInt(limit)), 
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(totalCount / parseInt(limit)),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: "Error retrieving banks",
+      error: error.message,
+      success: false,
+    });
   }
 };
 
