@@ -280,23 +280,34 @@ export const getAllActiveProducts = async (req, res) => {
 export const getAllProducts = async (req, res) => {
   try {
     const query = {};
-    const { inStock, price, isActive, category, subcategory, categoryType } =
-      req.query;
+    const { inStock, price, isActive, category, subcategory, categoryType, search } = req.query;
+
     if (inStock && inStock !== "all") query.inStock = inStock;
     if (price && price !== "all") query.price = price;
     if (isActive && isActive !== "all") query.isActive = isActive;
     if (category && category !== "all") query.category = category;
     if (subcategory && subcategory !== "all") query.subcategory = subcategory;
-    if (categoryType && categoryType !== "all")
-      query.categoryType = categoryType;
+    if (categoryType && categoryType !== "all") query.categoryType = categoryType;
+
+    // 🔹 Global Search Implementation
+    if (search && search.trim() !== "") {
+      const regexSearch = { $regex: search, $options: "i" }; // Case-insensitive search
+
+      query.$or = [
+        { title: regexSearch },
+        { description: regexSearch },
+        { "categoryType.name": regexSearch }, // Search within populated categoryType name
+        { "category.name": regexSearch }, // Search within populated category name
+        { "subcategory.name": regexSearch }, // Search within populated subcategory name
+      ];
+    }
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     const products = await Product.find(query)
-      .select(
-        " _id title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt"
-      )
+      .select("_id title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt")
       .populate("seller", "companyName companyIcon")
       .populate("categoryType", "name")
       .populate("category", "name")
@@ -305,7 +316,7 @@ export const getAllProducts = async (req, res) => {
       .limit(limit)
       .sort({ createdAt: -1 });
 
-    const totalProducts = await Product.countDocuments(query); // Use the same query to count filtered results
+    const totalProducts = await Product.countDocuments(query);
 
     res.status(200).json({
       message: "Products fetched successfully",
@@ -317,11 +328,10 @@ export const getAllProducts = async (req, res) => {
       itemsPerPage: limit,
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error fetching products", error: err.message });
+    res.status(500).json({ message: "Error fetching products", error: err.message });
   }
 };
+
 
 // Get all seller products (for seller to view all)
 export const getAllSellerProducts = async (req, res) => {
@@ -349,13 +359,16 @@ export const getAllSellerProducts = async (req, res) => {
 
     // Add search functionality
     if (search && search.trim() !== "") {
-      // Create a text search query using regex for case-insensitive search
       query.$or = [
         { title: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
-        // Add more fields if needed for search
+        { brand: { $regex: search, $options: "i" } }, // Search in brand as well
+        { "categoryType.name": { $regex: search, $options: "i" } }, // Search in categoryType
+        { "category.name": { $regex: search, $options: "i" } }, // Search in category
+        { "subcategory.name": { $regex: search, $options: "i" } }, // Search in subcategory
       ];
     }
+    
 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
