@@ -292,7 +292,7 @@ export const getAllProducts = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const products = await Product.find(query)
-      .select("title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt")
+      .select(" _id title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt")
       .populate("seller", "companyName companyIcon")
       .populate("categoryType", "name")
       .populate("category", "name")
@@ -350,13 +350,14 @@ export const getAllSellerProducts = async (req, res) => {
 
     // Fetch filtered products
     const products = await Product.find(query)
-      .select("title thumbnail discountedPrice brand categoryType stock isApproved createdAt")
-      .populate("categoryType", "name")
-      .populate("category", "name")
-      .populate("subcategory", "name")
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 });
+    .select("_id title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt")
+    .populate("seller", "companyName companyIcon")
+    .populate("categoryType", "name")
+    .populate("category", "name")
+    .populate("subcategory", "name")
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 });
 
     // Get total count with the current filters applied
     const totalFilteredProducts = await Product.countDocuments(query);
@@ -370,6 +371,8 @@ export const getAllSellerProducts = async (req, res) => {
       totalItems: totalFilteredProducts,
       itemsPerPage: limit,
     });
+        
+
   } catch (err) {
     res.status(500).json({ message: "Error fetching products", error: err.message });
   }
