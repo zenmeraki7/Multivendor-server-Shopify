@@ -279,20 +279,24 @@ export const getAllActiveProducts = async (req, res) => {
 // Get all products (for admin to view all)
 export const getAllProducts = async (req, res) => {
   try {
-    const query = {}
-    const {inStock,price,isActive,category,subcategory,categoryType} = req.query;    
-    if(inStock) query.inStock = inStock 
-    if(price) query.price = price
-    if(isActive) query.isActive = isActive
-    if (category) query.category = category;
-    if (subcategory) query.subcategory = subcategory;
-    if (categoryType) query.categoryType = categoryType;
+    const query = {};
+    const { inStock, price, isActive, category, subcategory, categoryType } =
+      req.query;
+    if (inStock && inStock !== "all") query.inStock = inStock;
+    if (price && price !== "all") query.price = price;
+    if (isActive && isActive !== "all") query.isActive = isActive;
+    if (category && category !== "all") query.category = category;
+    if (subcategory && subcategory !== "all") query.subcategory = subcategory;
+    if (categoryType && categoryType !== "all")
+      query.categoryType = categoryType;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     const products = await Product.find(query)
-      .select(" _id title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt")
+      .select(
+        " _id title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt"
+      )
       .populate("seller", "companyName companyIcon")
       .populate("categoryType", "name")
       .populate("category", "name")
@@ -313,7 +317,9 @@ export const getAllProducts = async (req, res) => {
       itemsPerPage: limit,
     });
   } catch (err) {
-    res.status(500).json({ message: "Error fetching products", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching products", error: err.message });
   }
 };
 
@@ -322,7 +328,15 @@ export const getAllSellerProducts = async (req, res) => {
   try {
     const query = { seller: req.vendor._id }; // Base query for the seller
 
-    const { inStock, price, isActive, category, subcategory, categoryType, search } = req.query;
+    const {
+      inStock,
+      price,
+      isActive,
+      category,
+      subcategory,
+      categoryType,
+      search,
+    } = req.query;
 
     // Apply filters only if they are not "all"
     if (inStock && inStock !== "all") query.inStock = inStock;
@@ -330,8 +344,9 @@ export const getAllSellerProducts = async (req, res) => {
     if (isActive && isActive !== "all") query.isActive = isActive;
     if (category && category !== "all") query.category = category;
     if (subcategory && subcategory !== "all") query.subcategory = subcategory;
-    if (categoryType && categoryType !== "all") query.categoryType = categoryType;
-    
+    if (categoryType && categoryType !== "all")
+      query.categoryType = categoryType;
+
     // Add search functionality
     if (search && search.trim() !== "") {
       // Create a text search query using regex for case-insensitive search
@@ -350,14 +365,16 @@ export const getAllSellerProducts = async (req, res) => {
 
     // Fetch filtered products
     const products = await Product.find(query)
-    .select("_id title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt")
-    .populate("seller", "companyName companyIcon")
-    .populate("categoryType", "name")
-    .populate("category", "name")
-    .populate("subcategory", "name")
-    .skip(skip)
-    .limit(limit)
-    .sort({ createdAt: -1 });
+      .select(
+        "_id title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt"
+      )
+      .populate("seller", "companyName companyIcon")
+      .populate("categoryType", "name")
+      .populate("category", "name")
+      .populate("subcategory", "name")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
 
     // Get total count with the current filters applied
     const totalFilteredProducts = await Product.countDocuments(query);
@@ -371,13 +388,12 @@ export const getAllSellerProducts = async (req, res) => {
       totalItems: totalFilteredProducts,
       itemsPerPage: limit,
     });
-        
-
   } catch (err) {
-    res.status(500).json({ message: "Error fetching products", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching products", error: err.message });
   }
 };
-
 
 // Get a specific product by ID (for vendor and admin)
 export const getProductById = async (req, res) => {
