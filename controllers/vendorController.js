@@ -415,40 +415,51 @@ export const loginVendor = async (req, res) => {
 // admin view all vendors
 export const getAllVendors = async (req, res) => {
   try {
-     const query = {}
-     const {isVerified,isBlocked,state,country, minSales, maxSales } = req.query
-     
-     if(isVerified && isVerified !== "all")query.isVerified = isVerified;
-     if(isBlocked && isBlocked  !== "all")query.isBlocked = isBlocked;
-     if(state && state !== "all") query.state = state;
-     if(country && country !== "all") query.country = country;
+    const query = {};
+    const { isVerified, isBlocked, state, country, minSales, maxSales, search } = req.query;
 
-     // Filter by totalSales range
+    if (isVerified && isVerified !== "all") query.isVerified = isVerified;
+    if (isBlocked && isBlocked !== "all") query.isBlocked = isBlocked;
+    if (state && state !== "all") query.state = state;
+    if (country && country !== "all") query.country = country;
+
+    // Filter by totalSales range
     if (minSales || maxSales) {
       query["salesData.totalSales"] = {}; // Initialize filter object
       if (minSales) query["salesData.totalSales"].$gte = parseFloat(minSales); // Minimum sales
       if (maxSales) query["salesData.totalSales"].$lte = parseFloat(maxSales); // Maximum sales
     }
+
     // Extract page and limit from query parameters, defaulting to page 1 and 10 items per page
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-
-    // Calculate the number of documents to skip
     const skip = (page - 1) * limit;
 
     // Fetch vendors with pagination
-    const vendors = await Vendor.find(query)
-      .select(
-        "fullName email phoneNum country state companyName salesData companyIcon isVerified"
-      )
+    let vendorsQuery = Vendor.find(query)
+      .select("fullName email phoneNum country state companyName salesData companyIcon isVerified isBlocked")
       .populate("country", "name") // Populate 'country' field, selecting only the 'name' field
       .populate("state", "name") // Populate 'state' field, selecting only the 'name' field
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
 
-    // Get the total count of vendors
-    const totalVendors = await Vendor.countDocuments(query)
+    let vendors = await vendorsQuery;
+
+    // Search logic for companyName, email, state, and country (after populating)
+    if (search) {
+      const regex = new RegExp(search, "i"); // Case-insensitive regex search
+
+      vendors = vendors.filter((vendor) =>
+        regex.test(vendor.companyName) ||
+        regex.test(vendor.email) ||
+        regex.test(vendor.state?.name) || // Search by state name after population
+        regex.test(vendor.country?.name) // Search by country name after population
+      );
+    }
+
+    // Get the total count of vendors (without pagination)
+    const totalVendors = await Vendor.countDocuments(query);
 
     res.status(200).json({
       message: "Vendors fetched successfully",
@@ -460,11 +471,11 @@ export const getAllVendors = async (req, res) => {
       success: true,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching vendors.", error: error.message });
+    res.status(500).json({ message: "Error fetching vendors.", error: error.message });
   }
 };
+
+
 
 // Get Single Vendor (Admin View)
 export const getVendorById = async (req, res) => {
@@ -619,24 +630,29 @@ export const blockVendor = async (req, res) => {
     const { action } = req.body; // Expecting action as "block" or "unblock"
 
     if (!["block", "unblock"].includes(action)) {
-      return res.status(400).json({ message: "Invalid action" });
+      return res.status(400).json({ message: "Invalid action. Use 'block' or 'unblock'." });
     }
 
     const isBlocked = action === "block"; // Set isBlocked based on action
 
-    const updatedVendor = await Vendor.findByIdAndUpdate(
-      id,
-      { isBlocked },
-      { new: true }
-    );
-
-    if (!updatedVendor) {
+    // Ensure vendor exists before updating
+    const vendor = await Vendor.findById(id);
+    if (!vendor) {
       return res.status(404).json({ message: "Vendor not found" });
     }
 
+    // Update the vendor's blocked status
+    vendor.isBlocked = isBlocked;
+    await vendor.save();
+
     res.status(200).json({
       message: `Vendor ${isBlocked ? 'blocked' : 'unblocked'} successfully`,
-      vendor: updatedVendor,
+      vendor: {
+        id: vendor._id,
+        companyName: vendor.companyName,
+        email: vendor.email,
+        isBlocked: vendor.isBlocked, // Ensure frontend receives updated status
+      },
     });
   } catch (error) {
     res.status(500).json({ message: "Internal Server Error", error: error.message });
