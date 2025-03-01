@@ -87,26 +87,26 @@ export const getAllSubcategories = async (req, res) => {
   try {
     const query = {};
     const { isActive, category, page = 1, limit = 10, id, search } = req.query;
-
+    
     if (isActive && isActive !== "all") query.isActive = isActive === "true";
     if (category && category !== "all") query.category = category;
-
+    
     // If search query exists, find matching category IDs first
     let categoryIds = [];
     if (search) {
       categoryIds = await Category.find({
         name: { $regex: search, $options: "i" },
       }).select("_id");
-
+      
       query.$or = [
         { name: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
         { category: { $in: categoryIds.map((cat) => cat._id) } }, // Match category ID
       ];
     }
-
+    
     const skip = (parseInt(page) - 1) * parseInt(limit);
-
+    
     if (id) {
       const subcategory = await Subcategory.findById(id).populate("category", "name");
       if (!subcategory) {
@@ -121,15 +121,15 @@ export const getAllSubcategories = async (req, res) => {
         message: "Sub Category fetched successfully",
       });
     }
-
+    
     const subcategories = await Subcategory.find(query)
       .populate("category", "name")
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
-
+    
     const totalCount = await Subcategory.countDocuments(query);
-
+    
     res.status(200).json({
       data: subcategories,
       success: true,
