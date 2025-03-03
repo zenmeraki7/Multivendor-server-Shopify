@@ -42,6 +42,71 @@ const vendorValidationSchema = Joi.object({
   companyName: Joi.string().required().trim(),
 });
 
+const addVendorSchema = Joi.object({
+  fullName: Joi.string().trim().required().messages({
+    "string.empty": "Full name is required.",
+  }),
+  companyName: Joi.string().trim().required().messages({
+    "string.empty": "Company name is required.",
+  }),
+  email: Joi.string().email().trim().required().messages({
+    "string.empty": "Email is required.",
+    "string.email": "Invalid email format.",
+  }),
+  phoneNum: Joi.string()
+    .pattern(/^\d{10}$/)
+    .required()
+    .messages({
+      "string.empty": "Phone number is required.",
+      "string.pattern.base": "Phone number must be exactly 10 digits.",
+    }),
+  address: Joi.string().trim().required().messages({
+    "string.empty": "Address is required.",
+  }),
+  city: Joi.string().trim().required().messages({
+    "string.empty": "City is required.",
+  }),
+  country: Joi.string().trim().required().messages({
+    "string.empty": "Country is required.",
+  }),
+  state: Joi.string().trim().required().messages({
+    "string.empty": "State is required.",
+  }),
+  businessType: Joi.string().trim().required().messages({
+    "string.empty": "Business type is required.",
+  }),
+  zipCode: Joi.string()
+    .pattern(/^\d{5,6}$/)
+    .required()
+    .messages({
+      "string.empty": "Zip code is required.",
+      "string.pattern.base": "Zip code must be 5 or 6 digits.",
+    }),
+  storeDescription: Joi.string().optional(),
+  sellerDescription: Joi.string().optional(),
+  sellerPolicy: Joi.string().optional(),
+  password: Joi.string().min(8).required().messages({
+    "string.empty": "Password is required.",
+    "string.min": "Password must be at least 8 characters long.",
+  }),
+  confirmPassword: Joi.any()
+    .valid(Joi.ref("password"))
+    .required()
+    .messages({
+      "any.only": "Passwords do not match.",
+    }),
+});
+
+const changePasswordSchema = Joi.object({
+  currentPassword: Joi.string().required().messages({
+    "string.empty": "Current password is required.",
+  }),
+  newPassword: Joi.string().min(8).required().messages({
+    "string.empty": "New password is required.",
+    "string.min": "New password must be at least 8 characters long.",
+  }),
+});
+
 // Create Vendor Account
 export const createVendor = async (req, res) => {
   try {
@@ -929,5 +994,58 @@ export const addVendor = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+// Vendor Change Password
+export const changeVendorPassword = async (req, res) => {
+  try {
+    // ✅ Extract the token from request headers
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Unauthorized. No token provided." });
+    }
+    
+    // ✅ Extract only the token part (removes "Bearer " prefix)
+    const token = authHeader.split(" ")[1];
+
+    // ✅ Verify token and extract vendor ID
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const vendorId = decoded.id;
+
+    const { currentPassword, newPassword } = req.body;
+
+    // ✅ Validate required fields
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Please provide both current and new passwords." });
+    }
+
+    // ✅ Find the vendor in the database
+    const vendor = await Vendor.findById(vendorId).select("+password"); // Ensure password is fetched
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found." });
+    }
+
+    // ✅ Ensure vendor has a stored password
+    if (!vendor.password) {
+      return res.status(500).json({ message: "Vendor password is missing. Contact support." });
+    }
+
+    // ✅ Check if the current password is correct
+    const isPasswordCorrect = await bcrypt.compare(currentPassword, vendor.password);
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ message: "Current password is incorrect." });
+    }
+
+    // ✅ Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // ✅ Update the password without triggering schema validation
+    await Vendor.updateOne({ _id: vendorId }, { $set: { password: hashedPassword } });
+
+    res.status(200).json({ message: "Password changed successfully!" });
+
+  } catch (error) {
+    console.error("Error in changeVendorPassword:", error); // ✅ Logs error in terminal
+    res.status(500).json({ message: "Something went wrong.", error: error.message });
   }
 };

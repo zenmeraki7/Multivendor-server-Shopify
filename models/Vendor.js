@@ -95,7 +95,7 @@ const vendorSchema = new mongoose.Schema(
     businessType:{
      type: mongoose.Schema.Types.ObjectId,
       ref: "BusinessType",
-      required: true,      
+      required: true,
     },
     PAN: {
       documentNumber: {
