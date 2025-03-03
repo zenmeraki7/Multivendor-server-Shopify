@@ -83,6 +83,20 @@ const vendorSchema = new mongoose.Schema(
     website: {
       type: String,
     },
+    storeDescription:{
+      type: String,
+    },
+    sellerDescription:{
+      type: String,
+    },
+    sellerPolicy:{
+      type: String,
+    },
+    businessType:{
+     type: mongoose.Schema.Types.ObjectId,
+      ref: "BusinessType",
+      required: true,      
+    },
     PAN: {
       documentNumber: {
         type: String,

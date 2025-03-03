@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Vendor from "../models/Vendor.js"; // Adjust path as per your project structure
 import bcrypt from "bcryptjs";
 import Joi from "joi";
@@ -848,3 +849,85 @@ console.log("----");
     res.status(500).json({ message: "Error resetting password.", error: error.message });
   }
 });
+// Admin Adds a New Vendor (Seller)
+export const addVendor = async (req, res) => {
+  try {
+    const {
+      fullName,
+      companyName,
+      email,
+      address,
+      city,
+      country, 
+      state,  
+      businessType,
+      zipCode,
+      phoneNum,
+      storeDescription,
+      sellerDescription,
+      sellerPolicy,
+      password,
+      confirmPassword,
+    } = req.body;
+
+    // Validate if passwords match
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match" });
+    }
+
+    // Validate ObjectId fields
+    if (!mongoose.Types.ObjectId.isValid(country)) {
+      return res.status(400).json({ message: "Invalid country ID" });
+    }
+    if (!mongoose.Types.ObjectId.isValid(state)) {
+      return res.status(400).json({ message: "Invalid state ID" });
+    }
+    if (!mongoose.Types.ObjectId.isValid(businessType)) {
+      return res.status(400).json({ message: "Invalid business type ID" });
+    }
+
+    // Check if email already exists
+    const existingVendor = await Vendor.findOne({ email });
+    if (existingVendor) {
+      return res.status(400).json({ message: "Vendor with this email already exists" });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create Vendor instance
+    const newVendor = new Vendor({
+      fullName,
+      companyName,
+      email,
+      phoneNum,
+      address,
+      city,
+      country: new mongoose.Types.ObjectId(country), // Convert string to ObjectId
+      state: new mongoose.Types.ObjectId(state), // Convert string to ObjectId
+      businessType: new mongoose.Types.ObjectId(businessType), // Convert string to ObjectId
+      zipCode,
+      password: hashedPassword,
+      storeDescription,
+      sellerDescription,
+      sellerPolicy,
+      isEmailVerified: false,
+      isVerified: false,
+    });
+
+    // Save to Database
+    await newVendor.save();
+
+    // Send Email with Login Instructions
+    const subject = "Vendor Account Created Successfully";
+    const text = `Dear ${fullName},\n\nYour seller account has been created successfully.\n\nLogin Credentials:\nEmail: ${email}\n\nFor security reasons, we do not send passwords via email.\nPlease login using the password set by the admin and change it immediately.\n\nBest Regards,\nZenMeraki Team`;
+
+    await sendEmail(email, subject, text);
+
+    res.status(201).json({ message: "Seller added successfully. Login instructions sent via email." });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};

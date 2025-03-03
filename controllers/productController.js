@@ -282,23 +282,47 @@ export const getAllProducts = async (req, res) => {
     const query = {};
     const { inStock, price, isActive, category, subcategory, categoryType, search } = req.query;
 
-    if (inStock && inStock !== "all") query.inStock = inStock;
-    if (price && price !== "all") query.price = price;
-    if (isActive && isActive !== "all") query.isActive = isActive;
-    if (category && category !== "all") query.category = category;
-    if (subcategory && subcategory !== "all") query.subcategory = subcategory;
-    if (categoryType && categoryType !== "all") query.categoryType = categoryType;
+    // Handle boolean filters
+    if (inStock === "true") query.stock = { $gt: 0 };
+    if (inStock === "false") query.stock = 0;
+    
+    // Handle price filtering if needed
+    if (price && price !== "all") {
+      // Implement price filtering logic based on your requirements
+      // Example: query.discountedPrice = { $lte: parseFloat(price) };
+    }
+    
+    // Handle approval status
+    if (isActive === "true") query.isApproved = true;
+    if (isActive === "false") query.isApproved = false;
+    
+    // Handle reference fields with proper ObjectId validation
+    if (category && category !== "all" && category !== "") {
+      // Check if it's a valid ObjectId before adding to query
+      if (/^[0-9a-fA-F]{24}$/.test(category)) {
+        query.category = category;
+      }
+    }
+    
+    if (subcategory && subcategory !== "all" && subcategory !== "") {
+      if (/^[0-9a-fA-F]{24}$/.test(subcategory)) {
+        query.subcategory = subcategory;
+      }
+    }
+    
+    if (categoryType && categoryType !== "all" && categoryType !== "") {
+      if (/^[0-9a-fA-F]{24}$/.test(categoryType)) {
+        query.categoryType = categoryType;
+      }
+    }
 
-    // 🔹 Global Search Implementation
+    // Global Search Implementation
     if (search && search.trim() !== "") {
       const regexSearch = { $regex: search, $options: "i" }; // Case-insensitive search
 
       query.$or = [
         { title: regexSearch },
         { description: regexSearch },
-        { "categoryType.name": regexSearch }, // Search within populated categoryType name
-        { "category.name": regexSearch }, // Search within populated category name
-        { "subcategory.name": regexSearch }, // Search within populated subcategory name
       ];
     }
 
@@ -307,7 +331,7 @@ export const getAllProducts = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const products = await Product.find(query)
-      .select("_id title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt")
+      .select("_id title thumbnail discountedPrice brand categoryType category subcategory seller stock isApproved createdAt")
       .populate("seller", "companyName companyIcon")
       .populate("categoryType", "name")
       .populate("category", "name")
@@ -316,11 +340,22 @@ export const getAllProducts = async (req, res) => {
       .limit(limit)
       .sort({ createdAt: -1 });
 
+    // For the search on populated fields, we need to filter after populating
+    let filteredProducts = products;
+    if (search && search.trim() !== "") {
+      const regexSearch = new RegExp(search, "i");
+      filteredProducts = products.filter(product => 
+        (product.categoryType && regexSearch.test(product.categoryType.name)) || 
+        (product.category && regexSearch.test(product.category.name)) || 
+        (product.subcategory && regexSearch.test(product.subcategory.name))
+      );
+    }
+
     const totalProducts = await Product.countDocuments(query);
 
     res.status(200).json({
       message: "Products fetched successfully",
-      data: products,
+      data: filteredProducts.length < products.length ? filteredProducts : products,
       success: true,
       currentPage: page,
       totalPages: Math.ceil(totalProducts / limit),
@@ -328,6 +363,7 @@ export const getAllProducts = async (req, res) => {
       itemsPerPage: limit,
     });
   } catch (err) {
+    console.error("Error in getAllProducts:", err);
     res.status(500).json({ message: "Error fetching products", error: err.message });
   }
 };

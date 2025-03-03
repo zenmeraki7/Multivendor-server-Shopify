@@ -18,6 +18,7 @@ import {
   forgotPasswordVendor,
   resetPasswordVendor,
   blockVendor,
+  addVendor
 } from "../controllers/vendorController.js";
 import {
   handleImageUpload,
@@ -127,4 +128,7 @@ router.put("/update-details", authentication, updateVendorDetails);
 // Route to update password 
 router.post("/forgot-password", forgotPasswordVendor);
 router.post("/reset-password/:token", resetPasswordVendor);
+
+//Route to add seller by admin
+router.post("/add-vendor", authenticateAdmin, addVendor);
 export default router;
