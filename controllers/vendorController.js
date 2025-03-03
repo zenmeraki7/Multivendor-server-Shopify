@@ -858,8 +858,8 @@ export const addVendor = async (req, res) => {
       email,
       address,
       city,
-      country, 
-      state,  
+      country,
+      state,
       businessType,
       zipCode,
       phoneNum,
@@ -892,7 +892,7 @@ export const addVendor = async (req, res) => {
       return res.status(400).json({ message: "Vendor with this email already exists" });
     }
 
-    // Hash the password
+    // Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create Vendor instance
@@ -903,9 +903,9 @@ export const addVendor = async (req, res) => {
       phoneNum,
       address,
       city,
-      country: new mongoose.Types.ObjectId(country), // Convert string to ObjectId
-      state: new mongoose.Types.ObjectId(state), // Convert string to ObjectId
-      businessType: new mongoose.Types.ObjectId(businessType), // Convert string to ObjectId
+      country: new mongoose.Types.ObjectId(country),
+      state: new mongoose.Types.ObjectId(state),
+      businessType: new mongoose.Types.ObjectId(businessType),
       zipCode,
       password: hashedPassword,
       storeDescription,
@@ -918,13 +918,13 @@ export const addVendor = async (req, res) => {
     // Save to Database
     await newVendor.save();
 
-    // Send Email with Login Instructions
-    const subject = "Vendor Account Created Successfully";
-    const text = `Dear ${fullName},\n\nYour seller account has been created successfully.\n\nLogin Credentials:\nEmail: ${email}\n\nFor security reasons, we do not send passwords via email.\nPlease login using the password set by the admin and change it immediately.\n\nBest Regards,\nZenMeraki Team`;
+    // Send Email with Login Credentials (including password)
+    const subject = "Vendor Account Created - ZenMeraki";
+    const text = `Dear ${fullName},\n\nYour seller account has been created successfully.\n\nLogin Credentials:\nEmail: ${email}\nPassword: ${password}\n\nFor security reasons, please login and change your password immediately.\n\nBest Regards,\nZenMeraki Team`;
 
     await sendEmail(email, subject, text);
 
-    res.status(201).json({ message: "Seller added successfully. Login instructions sent via email." });
+    res.status(201).json({ message: "Seller added successfully. Login credentials sent via email." });
 
   } catch (error) {
     console.error(error);

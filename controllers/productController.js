@@ -280,56 +280,46 @@ export const getAllActiveProducts = async (req, res) => {
 export const getAllProducts = async (req, res) => {
   try {
     const query = {};
-    const { inStock, price, isActive, category, subcategory, categoryType, search } = req.query;
+    const { inStock, isActive, category, subcategory, categoryType, search, minPrice, maxPrice } = req.query;
 
     // Handle boolean filters
     if (inStock === "true") query.stock = { $gt: 0 };
     if (inStock === "false") query.stock = 0;
-    
-    // Handle price filtering if needed
-    if (price && price !== "all") {
-      // Implement price filtering logic based on your requirements
-      // Example: query.discountedPrice = { $lte: parseFloat(price) };
+
+    // ✅ Handle price range filtering like total sales in vendors
+    if (minPrice || maxPrice) {
+      query.discountedPrice = {}; // Initialize filter object
+      if (minPrice) query.discountedPrice.$gte = parseFloat(minPrice); // Minimum price
+      if (maxPrice) query.discountedPrice.$lte = parseFloat(maxPrice); // Maximum price
     }
-    
+
     // Handle approval status
     if (isActive === "true") query.isApproved = true;
     if (isActive === "false") query.isApproved = false;
-    
-    // Handle reference fields with proper ObjectId validation
-    if (category && category !== "all" && category !== "") {
-      // Check if it's a valid ObjectId before adding to query
-      if (/^[0-9a-fA-F]{24}$/.test(category)) {
-        query.category = category;
-      }
+
+    // Handle ObjectId validation for category fields
+    if (category && category !== "all" && /^[0-9a-fA-F]{24}$/.test(category)) {
+      query.category = category;
     }
-    
-    if (subcategory && subcategory !== "all" && subcategory !== "") {
-      if (/^[0-9a-fA-F]{24}$/.test(subcategory)) {
-        query.subcategory = subcategory;
-      }
+    if (subcategory && subcategory !== "all" && /^[0-9a-fA-F]{24}$/.test(subcategory)) {
+      query.subcategory = subcategory;
     }
-    
-    if (categoryType && categoryType !== "all" && categoryType !== "") {
-      if (/^[0-9a-fA-F]{24}$/.test(categoryType)) {
-        query.categoryType = categoryType;
-      }
+    if (categoryType && categoryType !== "all" && /^[0-9a-fA-F]{24}$/.test(categoryType)) {
+      query.categoryType = categoryType;
     }
 
-    // Global Search Implementation
+    // ✅ Implement case-insensitive search for title & description
     if (search && search.trim() !== "") {
-      const regexSearch = { $regex: search, $options: "i" }; // Case-insensitive search
-
-      query.$or = [
-        { title: regexSearch },
-        { description: regexSearch },
-      ];
+      const regexSearch = { $regex: search, $options: "i" };
+      query.$or = [{ title: regexSearch }, { description: regexSearch }];
     }
 
+    // Pagination
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    // Fetch products
     const products = await Product.find(query)
       .select("_id title thumbnail discountedPrice brand categoryType category subcategory seller stock isApproved createdAt")
       .populate("seller", "companyName companyIcon")
@@ -340,14 +330,15 @@ export const getAllProducts = async (req, res) => {
       .limit(limit)
       .sort({ createdAt: -1 });
 
-    // For the search on populated fields, we need to filter after populating
+    // Search on populated fields (category, subcategory, categoryType)
     let filteredProducts = products;
     if (search && search.trim() !== "") {
       const regexSearch = new RegExp(search, "i");
-      filteredProducts = products.filter(product => 
-        (product.categoryType && regexSearch.test(product.categoryType.name)) || 
-        (product.category && regexSearch.test(product.category.name)) || 
-        (product.subcategory && regexSearch.test(product.subcategory.name))
+      filteredProducts = products.filter(
+        (product) =>
+          (product.categoryType && regexSearch.test(product.categoryType.name)) ||
+          (product.category && regexSearch.test(product.category.name)) ||
+          (product.subcategory && regexSearch.test(product.subcategory.name))
       );
     }
 
@@ -367,6 +358,7 @@ export const getAllProducts = async (req, res) => {
     res.status(500).json({ message: "Error fetching products", error: err.message });
   }
 };
+
 
 
 // Get all seller products (for seller to view all)
