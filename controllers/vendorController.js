@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Vendor from "../models/Vendor.js"; // Adjust path as per your project structure
 import bcrypt from "bcryptjs";
 import Joi from "joi";
@@ -39,6 +40,71 @@ const vendorValidationSchema = Joi.object({
   state: Joi.string().required(),
   country: Joi.string().required(),
   companyName: Joi.string().required().trim(),
+});
+
+const addVendorSchema = Joi.object({
+  fullName: Joi.string().trim().required().messages({
+    "string.empty": "Full name is required.",
+  }),
+  companyName: Joi.string().trim().required().messages({
+    "string.empty": "Company name is required.",
+  }),
+  email: Joi.string().email().trim().required().messages({
+    "string.empty": "Email is required.",
+    "string.email": "Invalid email format.",
+  }),
+  phoneNum: Joi.string()
+    .pattern(/^\d{10}$/)
+    .required()
+    .messages({
+      "string.empty": "Phone number is required.",
+      "string.pattern.base": "Phone number must be exactly 10 digits.",
+    }),
+  address: Joi.string().trim().required().messages({
+    "string.empty": "Address is required.",
+  }),
+  city: Joi.string().trim().required().messages({
+    "string.empty": "City is required.",
+  }),
+  country: Joi.string().trim().required().messages({
+    "string.empty": "Country is required.",
+  }),
+  state: Joi.string().trim().required().messages({
+    "string.empty": "State is required.",
+  }),
+  businessType: Joi.string().trim().required().messages({
+    "string.empty": "Business type is required.",
+  }),
+  zipCode: Joi.string()
+    .pattern(/^\d{5,6}$/)
+    .required()
+    .messages({
+      "string.empty": "Zip code is required.",
+      "string.pattern.base": "Zip code must be 5 or 6 digits.",
+    }),
+  storeDescription: Joi.string().optional(),
+  sellerDescription: Joi.string().optional(),
+  sellerPolicy: Joi.string().optional(),
+  password: Joi.string().min(8).required().messages({
+    "string.empty": "Password is required.",
+    "string.min": "Password must be at least 8 characters long.",
+  }),
+  confirmPassword: Joi.any()
+    .valid(Joi.ref("password"))
+    .required()
+    .messages({
+      "any.only": "Passwords do not match.",
+    }),
+});
+
+const changePasswordSchema = Joi.object({
+  currentPassword: Joi.string().required().messages({
+    "string.empty": "Current password is required.",
+  }),
+  newPassword: Joi.string().min(8).required().messages({
+    "string.empty": "New password is required.",
+    "string.min": "New password must be at least 8 characters long.",
+  }),
 });
 
 // Create Vendor Account
@@ -848,3 +914,138 @@ console.log("----");
     res.status(500).json({ message: "Error resetting password.", error: error.message });
   }
 });
+// Admin Adds a New Vendor (Seller)
+export const addVendor = async (req, res) => {
+  try {
+    const {
+      fullName,
+      companyName,
+      email,
+      address,
+      city,
+      country,
+      state,
+      businessType,
+      zipCode,
+      phoneNum,
+      storeDescription,
+      sellerDescription,
+      sellerPolicy,
+      password,
+      confirmPassword,
+    } = req.body;
+
+    // Validate if passwords match
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match" });
+    }
+
+    // Validate ObjectId fields
+    if (!mongoose.Types.ObjectId.isValid(country)) {
+      return res.status(400).json({ message: "Invalid country ID" });
+    }
+    if (!mongoose.Types.ObjectId.isValid(state)) {
+      return res.status(400).json({ message: "Invalid state ID" });
+    }
+    if (!mongoose.Types.ObjectId.isValid(businessType)) {
+      return res.status(400).json({ message: "Invalid business type ID" });
+    }
+
+    // Check if email already exists
+    const existingVendor = await Vendor.findOne({ email });
+    if (existingVendor) {
+      return res.status(400).json({ message: "Vendor with this email already exists" });
+    }
+
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create Vendor instance
+    const newVendor = new Vendor({
+      fullName,
+      companyName,
+      email,
+      phoneNum,
+      address,
+      city,
+      country: new mongoose.Types.ObjectId(country),
+      state: new mongoose.Types.ObjectId(state),
+      businessType: new mongoose.Types.ObjectId(businessType),
+      zipCode,
+      password: hashedPassword,
+      storeDescription,
+      sellerDescription,
+      sellerPolicy,
+      isEmailVerified: false,
+      isVerified: false,
+    });
+
+    // Save to Database
+    await newVendor.save();
+
+    // Send Email with Login Credentials (including password)
+    const subject = "Vendor Account Created - ZenMeraki";
+    const text = `Dear ${fullName},\n\nYour seller account has been created successfully.\n\nLogin Credentials:\nEmail: ${email}\nPassword: ${password}\n\nFor security reasons, please login and change your password immediately.\n\nBest Regards,\nZenMeraki Team`;
+
+    await sendEmail(email, subject, text);
+
+    res.status(201).json({ message: "Seller added successfully. Login credentials sent via email." });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+// Vendor Change Password
+export const changeVendorPassword = async (req, res) => {
+  try {
+    // ✅ Extract the token from request headers
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Unauthorized. No token provided." });
+    }
+    
+    // ✅ Extract only the token part (removes "Bearer " prefix)
+    const token = authHeader.split(" ")[1];
+
+    // ✅ Verify token and extract vendor ID
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const vendorId = decoded.id;
+
+    const { currentPassword, newPassword } = req.body;
+
+    // ✅ Validate required fields
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Please provide both current and new passwords." });
+    }
+
+    // ✅ Find the vendor in the database
+    const vendor = await Vendor.findById(vendorId).select("+password"); // Ensure password is fetched
+    if (!vendor) {
+      return res.status(404).json({ message: "Vendor not found." });
+    }
+
+    // ✅ Ensure vendor has a stored password
+    if (!vendor.password) {
+      return res.status(500).json({ message: "Vendor password is missing. Contact support." });
+    }
+
+    // ✅ Check if the current password is correct
+    const isPasswordCorrect = await bcrypt.compare(currentPassword, vendor.password);
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ message: "Current password is incorrect." });
+    }
+
+    // ✅ Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // ✅ Update the password without triggering schema validation
+    await Vendor.updateOne({ _id: vendorId }, { $set: { password: hashedPassword } });
+
+    res.status(200).json({ message: "Password changed successfully!" });
+
+  } catch (error) {
+    console.error("Error in changeVendorPassword:", error); // ✅ Logs error in terminal
+    res.status(500).json({ message: "Something went wrong.", error: error.message });
+  }
+};
