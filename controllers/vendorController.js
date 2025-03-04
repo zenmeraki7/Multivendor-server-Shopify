@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { sendEmail } from "../utils/sendEmail.js";
 import Otp from "../models/Otp.js";
 import { vendorUpdateSchema } from "../helper/vendorValidation.js";
+import {vendorRegistrationSchema} from "../helper/vendorValidation.js"
 import asyncHandler from "express-async-handler";
 
 // Approve/Reject Vendor Schema
@@ -110,49 +111,61 @@ const changePasswordSchema = Joi.object({
 // Create Vendor Account
 export const createVendor = async (req, res) => {
   try {
-    const { email, password, phoneNum } = req.body;
+    // ✅ Validate request body with Joi
+    const { error, value } = vendorRegistrationSchema.validate(req.body, { abortEarly: false });
 
-    // Check if vendor with the email or phone number already exists
-    const existingVendor = await Vendor.findOne({
-      $or: [{ email }, { phoneNum }],
-    });
+    if (error) {
+      return res.status(400).json({
+        status: "error",
+        message: "Validation error",
+        details: error.details.map((err) => ({
+          field: err.path[0],
+          message: err.message,
+        })),
+      });
+    }
+
+    const { email, password, phoneNum, businessType } = value;
+
+    // ✅ Check if vendor with email or phone already exists
+    const existingVendor = await Vendor.findOne({ $or: [{ email }, { phoneNum }] });
     if (existingVendor) {
       return res.status(400).json({
         message: "Vendor with this email or phone number already exists.",
       });
     }
 
-    // Hash the password before saving
-    const hashedPassword = await bcrypt.hash(password, 10);
-    req.body.password = hashedPassword;
+    // ✅ Validate `businessType` as ObjectId
+    if (!mongoose.Types.ObjectId.isValid(businessType)) {
+      return res.status(400).json({ message: "Invalid business type ID." });
+    }
 
-    const vendor = new Vendor(req.body);
-    vendor.KycProvidedDetails.personalDetails = true;
+    // ✅ Hash password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // ✅ Create vendor
+    const vendor = new Vendor({
+      ...value,
+      password: hashedPassword,
+      KycProvidedDetails: { personalDetails: true },
+    });
+
     await vendor.save();
 
-    // Generate OTP
+    // ✅ Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiration = Date.now() + 10 * 60 * 1000; // Valid for 10 minutes
 
-    // Save OTP to the OTP collection
-    const newOtp = new Otp({
-      email,
-      otp,
-      expiresAt: otpExpiration,
-    });
-    await newOtp.save();
+    // ✅ Save OTP
+    await new Otp({ email, otp, expiresAt: otpExpiration }).save();
 
-    // Send OTP Email
-    await sendEmail(
-      email,
-      "Verify Your Vendor Account",
-      `Your OTP for email verification is: ${otp}`
-    );
+    // ✅ Send OTP Email
+    await sendEmail(email, "Verify Your Vendor Account", `Your OTP for email verification is: ${otp}`);
 
     res.status(201).json({
-      message:
-        "Please wait for admin approval. Add other details like bank and documents. An OTP has been sent to your email for verification.",
+      message: "Please wait for admin approval. An OTP has been sent to your email for verification.",
     });
+
   } catch (error) {
     res.status(500).json({
       message: "Error creating vendor account.",
@@ -917,28 +930,33 @@ console.log("----");
 // Admin Adds a New Vendor (Seller)
 export const addVendor = async (req, res) => {
   try {
+    // Validate request body with Joi schema
+    const { error, value } = addVendorSchema.validate(req.body, { abortEarly: false });
+
+    if (error) {
+      return res.status(400).json({
+        message: "Validation Error",
+        errors: error.details.map((err) => ({ field: err.path[0], message: err.message })),
+      });
+    }
+
     const {
       fullName,
       companyName,
       email,
+      phoneNum,
       address,
       city,
       country,
       state,
       businessType,
       zipCode,
-      phoneNum,
+      password,
+      confirmPassword,
       storeDescription,
       sellerDescription,
       sellerPolicy,
-      password,
-      confirmPassword,
-    } = req.body;
-
-    // Validate if passwords match
-    if (password !== confirmPassword) {
-      return res.status(400).json({ message: "Passwords do not match" });
-    }
+    } = value;
 
     // Validate ObjectId fields
     if (!mongoose.Types.ObjectId.isValid(country)) {
@@ -999,33 +1017,33 @@ export const addVendor = async (req, res) => {
 // Vendor Change Password
 export const changeVendorPassword = async (req, res) => {
   try {
-    // ✅ Extract the token from request headers
+    // ✅ Extract and verify token
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Unauthorized. No token provided." });
     }
     
-    // ✅ Extract only the token part (removes "Bearer " prefix)
     const token = authHeader.split(" ")[1];
-
-    // ✅ Verify token and extract vendor ID
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const vendorId = decoded.id;
 
-    const { currentPassword, newPassword } = req.body;
-
-    // ✅ Validate required fields
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: "Please provide both current and new passwords." });
+    // ✅ Validate request body with Joi
+    const { error, value } = changePasswordSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      return res.status(400).json({
+        message: "Validation Error",
+        errors: error.details.map((err) => ({ field: err.path[0], message: err.message })),
+      });
     }
 
-    // ✅ Find the vendor in the database
-    const vendor = await Vendor.findById(vendorId).select("+password"); // Ensure password is fetched
+    const { currentPassword, newPassword } = value;
+
+    // ✅ Find vendor and ensure password is fetched
+    const vendor = await Vendor.findById(vendorId).select("+password");
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found." });
     }
 
-    // ✅ Ensure vendor has a stored password
     if (!vendor.password) {
       return res.status(500).json({ message: "Vendor password is missing. Contact support." });
     }
@@ -1036,16 +1054,14 @@ export const changeVendorPassword = async (req, res) => {
       return res.status(400).json({ message: "Current password is incorrect." });
     }
 
-    // ✅ Hash the new password
+    // ✅ Hash and update new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // ✅ Update the password without triggering schema validation
     await Vendor.updateOne({ _id: vendorId }, { $set: { password: hashedPassword } });
 
     res.status(200).json({ message: "Password changed successfully!" });
 
   } catch (error) {
-    console.error("Error in changeVendorPassword:", error); // ✅ Logs error in terminal
+    console.error("Error in changeVendorPassword:", error);
     res.status(500).json({ message: "Something went wrong.", error: error.message });
   }
 };
