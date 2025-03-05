@@ -1,7 +1,7 @@
 import Joi from "joi";
-
+import mongoose from "mongoose";
 // Vendor schema validation
-const vendorRegistrationSchema = Joi.object({
+export const vendorRegistrationSchema = Joi.object({
   fullName: Joi.string().trim().required().messages({
     "string.empty": "Full name is required.",
   }),
@@ -43,6 +43,21 @@ const vendorRegistrationSchema = Joi.object({
   website: Joi.string().uri().messages({
     "string.uri": "Website must be a valid URL.",
   }),
+  businessType: Joi.string()
+    .custom((value, helpers) => {
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        return helpers.error("any.invalid");
+      }
+      return value;
+    })
+    .required()
+    .messages({
+      "any.invalid": "Invalid business type ID.",
+      "string.empty": "Business type is required.",
+      "any.required": "Business type is required.",
+    }),
+
+ 
   supportContact: Joi.object({
     email: Joi.string().email().default("").messages({
       "string.email": "Support email must be a valid email.",
@@ -95,6 +110,7 @@ export const vendorUpdateSchema = Joi.object({
   website: Joi.string().uri().messages({
     "string.uri": "Website must be a valid URL.",
   }),
+ 
   supportContact: Joi.object({
     email: Joi.string().email().default("").messages({
       "string.email": "Support email must be a valid email.",
