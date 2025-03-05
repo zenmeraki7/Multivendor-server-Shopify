@@ -73,44 +73,53 @@ export const vendorRegistrationSchema = Joi.object({
 });
 
 export const vendorUpdateSchema = Joi.object({
-  fullName: Joi.string().trim().required().messages({
+  fullName: Joi.string().trim().messages({
     "string.empty": "Full name is required.",
   }),
-  email: Joi.string().email().required().messages({
+  email: Joi.string().email().messages({
     "string.email": "Please provide a valid email address.",
     "any.required": "Email is required.",
   }),
   phoneNum: Joi.string()
     .pattern(/^[0-9]{10}$/)
-    .required()
     .messages({
       "string.pattern.base": "Phone number must be exactly 10 digits.",
       "any.required": "Phone number is required.",
     }),
-  address: Joi.string().required().messages({
+  address: Joi.string().messages({
     "any.required": "Address is required.",
   }),
-  zipCode: Joi.number().positive().required().messages({
+  zipCode: Joi.number().positive().messages({
     "number.base": "Zip code must be a valid number.",
     "any.required": "Zip code is required.",
   }),
-  city: Joi.string().required().messages({
+  city: Joi.string().messages({
     "any.required": "City is required.",
   }),
-  state: Joi.string().required().messages({
+  state: Joi.string().messages({
     "any.required": "State is required.",
   }),
   country: Joi.string().default("India").messages({
     "any.required": "Country is required.",
   }),
-  companyName: Joi.string().trim().required().messages({
+  companyName: Joi.string().trim().messages({
     "string.empty": "Company name is required.",
     "any.required": "Company name is required.",
   }),
   website: Joi.string().uri().messages({
     "string.uri": "Website must be a valid URL.",
   }),
- 
+  businessType: Joi.string()
+  .custom((value, helpers) => {
+    if (!mongoose.Types.ObjectId.isValid(value)) {
+      return helpers.error("any.invalid");
+    }
+    return value;
+  })
+  .messages({
+    "any.invalid": "Invalid business type ID.",
+  }),
+
   supportContact: Joi.object({
     email: Joi.string().email().default("").messages({
       "string.email": "Support email must be a valid email.",
@@ -122,6 +131,15 @@ export const vendorUpdateSchema = Joi.object({
         "string.pattern.base":
           "Support phone number must be exactly 10 digits.",
       }),
+  }),
+  storeDescription: Joi.string().trim().allow("").messages({
+    "string.base": "Store description must be a string.",
+  }),
+  sellerDescription: Joi.string().trim().allow("").messages({
+    "string.base": "Seller description must be a string.",
+  }),
+  sellerPolicy : Joi.string().trim().allow("").messages({
+    "string.base": "Seller Policy must be a string.",
   }),
 });
 
