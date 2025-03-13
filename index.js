@@ -16,6 +16,7 @@ import stateRoutes from "./routes/stateRoutes.js";
 import countryRoutes from "./routes/countryRoutes.js";
 import businessTypesRoutes from "./routes//businessTYpesRoutes.js";
 import adminRoutes from "./routes/adminAuthRoutes.js";
+import shopifyRoutes from "./routes/shopifyAuthRoutes.js";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import { logMiddleware } from "./middlewares/logMiddleware.js";
 
@@ -37,6 +38,7 @@ app.use(cors());
 // Log all API calls
 app.use(logMiddleware);
 
+app.use("/", shopifyRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/vendor", vendorRoutes);
