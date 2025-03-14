@@ -2,7 +2,11 @@ import shopify from "../config/shopify.js";
 import Shop from "../models/Shop.js";
 import crypto from "crypto";
 import axios from "axios";
-import { CREATE_PRODUCT_QUERY } from "../services/graphql.js";
+import {
+  CREATE_PRODUCT_OPTION_QUERY,
+  CREATE_PRODUCT_QUERY,
+  CREATE_VARIANT_QUERY,
+} from "../services/graphql.js";
 
 export const shopifyAuth = async (req, res) => {
   const shop = req.query.shop;
@@ -143,89 +147,102 @@ export const createProduct = async (req, res) => {
   } = req.body;
 
   try {
-    const productImages = images.map((url) => ({ src: url }));
+    // const productImages = images.map((url) => ({ src: url }));
 
-    // Ensure the first image is the thumbnail
-    if (thumbnail) {
-      productImages.unshift({ src: thumbnail });
-    }
+    // // Ensure the first image is the thumbnail
+    // if (thumbnail) {
+    //   productImages.unshift({ src: thumbnail });
+    // }
 
-    const response = await client.query({
-      data: CREATE_PRODUCT_QUERY,
-      variables: {
-        input: {
-          title: "Premium Hoodie",
-          descriptionHtml: "<p>High-quality cotton hoodie.</p>",
-          productType: "Clothing",
-          vendor: "BrandX",
-          tags: ["hoodie", "cotton", "fashion"],
-          status: "ACTIVE",
-          images: [
-            {
-              src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSEZLeIw258b2lVOd5kKq9HTFNBZFlgMIWQKbPv_SvBO9_oL1ilVQ8za1pa40LC6tUb8Ao&usqp=CAU",
-            },
-            {
-              src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHtQ2IqJnLUcCVoU91_Yq1Muc9RbyP26Hx5ojdUj4BSsRUmU7BwIAEWwEEskxBgFnZBWc&usqp=CAU",
-            },
-          ],
-          variants: [
-            {
-              title: "Small",
-              price: "49.99",
-              compareAtPrice: "59.99",
-              sku: "HOODIE-S",
-              barcode: "9876543210987",
-              inventoryQuantities: [
-                {
-                  locationId: "gid://shopify/Location/123456789",
-                  availableQuantity: 10,
-                },
-              ],
-              weightUnit: "kg",
-            },
-            {
-              title: "Medium",
-              price: "49.99",
-              compareAtPrice: "59.99",
-              sku: "HOODIE-M",
-              barcode: "9876543210988",
-              inventoryQuantities: [
-                {
-                  locationId: "gid://shopify/Location/123456789",
-                  availableQuantity: 15,
-                },
-              ],
-              weightUnit: "kg",
-            },
-          ],
-          seo: {
-            title: "Best Hoodie for Winter",
-            description: "Stay warm with our premium hoodies.",
+    // const response = await client.query({
+    //   data: {
+    //     query: CREATE_PRODUCT_QUERY,
+    //     variables: {
+    //       product: {
+    //         title: "Helmet Nova",
+    //         descriptionHtml: "<strong>Good helmet</strong>",
+    //         vendor: "Helmet",
+    //         productType: "Helmet",
+    //         tags: ["Helmet", "Safety"],
+    //         seo: {
+    //           title: "Helmet Nova",
+    //           description: "Helmet Nova",
+    //         },
+    //         handle: "helmet-nova",
+    //       },
+    //       media: [
+    //         {
+    //           originalSource:
+    //             "https://cdn.shopify.com/shopifycloud/brochure/assets/sell/image/image-@artdirection-large-1ba8d5de56c361cec6bc487b747c8774b9ec8203f392a99f53c028df8d0fb3fc.png",
+    //           alt: "Gray helmet for bikers",
+    //           mediaContentType: "IMAGE",
+    //         },
+    //         {
+    //           originalSource:
+    //             "https://www.youtube.com/watch?v=4L8VbGRibj8&list=PLlMkWQ65HlcEoPyG9QayqEaAu0ftj0MMz",
+    //           alt: "Testing helmet resistance against impacts",
+    //           mediaContentType: "EXTERNAL_VIDEO",
+    //         },
+    //       ],
+    //     },
+    //   },
+    // });
+
+    // const optionResponse = await client.query({
+    //   data: {
+    //     query: CREATE_PRODUCT_OPTION_QUERY,
+    //     variables: {
+    //       productId: "gid://shopify/Product/9626225606903",
+    //       options: [
+    //         {
+    //           name: "Color",
+    //           values: [{ name: "Red" }, { name: "Blue" }, { name: "Green" }],
+    //         },
+    //       ],
+    //     },
+    //   },
+    // });
+
+    const variantResponse = await client.query({
+      data: {
+        query: CREATE_VARIANT_QUERY,
+        variables: {
+          productId: "gid://shopify/Product/9626225606903",
+          variants: {
+            barcode: "123456789",
+            compareAtPrice: "100",
+            price: "60",
+            optionValues: [
+              {
+                name: "Golden",
+                optionId: "gid://shopify/ProductOption/12109471514871",
+              },
+            ],
           },
-          metafields: [
-            {
-              namespace: "custom",
-              key: "material",
-              value: "100% Cotton",
-              type: "single_line_text_field",
-            },
-          ],
         },
       },
     });
 
-    if (response.body.data.productCreate.userErrors.length > 0) {
-      return res
-        .status(400)
-        .json({ errors: response.body.data.productCreate.userErrors });
-    }
+    // if (response.body.data.productCreate.userErrors.length > 0) {
+    //   return res
+    //     .status(400)
+    //     .json({ errors: response.body.data.productCreate.userErrors });
+    // }
+    // if (variantResponse.body.data.productVariants.userErrors.length > 0) {
+    //   return res
+    //     .status(400)
+    //     .json({ errors: response.body.data.productVariants.userErrors });
+    // }
+    // console.log(response);
 
     res.json({
       success: true,
-      product: response.body.data.productCreate.product,
+      // product: response.body.data.productCreate.product,
+      variants: variantResponse.body.data,
+      // options: optionResponse.body.data,
     });
   } catch (error) {
-    console.error("GraphQL Product Creation Error:", error);
-    res.status(500).json({ error: error });
+    console.error("GraphQL Product Creation Error:", error.message);
+    res.status(500).json({ error: error.message });
   }
 };
