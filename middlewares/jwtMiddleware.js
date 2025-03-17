@@ -1,7 +1,5 @@
 import jwt from "jsonwebtoken";
 import Vendor from "../models/Vendor.js";
-import User from "../models/User.js";
-import Admins from "../models/Admin.js";
 
 export const authentication = (req, res, next) => {
   const authHeader = req.headers.authorization;

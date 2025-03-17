@@ -66,7 +66,6 @@ const shipmentSchema = new mongoose.Schema({
 
 const orderSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Reference to the user
     items: [orderItemSchema], // Items in the order
     shippingAddress: addressSchema, // Shipping address
     paymentDetails: paymentSchema, // Payment details

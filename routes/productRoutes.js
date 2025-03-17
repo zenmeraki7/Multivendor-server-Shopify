@@ -25,7 +25,6 @@ import {
   validateProductCreation,
   validateVariant,
 } from "../helper/productValidation.js";
-import { checkProductMiddleware } from "../middlewares/checkexistMiddleware.js";
 import { checkVendorBlocked } from "../middlewares/checkVendorBlocked.js";
 
 const router = express.Router();
@@ -46,7 +45,6 @@ router.post(
 checkVendorBlocked,
   uploadImages,
   validateProductCreation,
-  checkProductMiddleware,
   handleImageUpload,
   createProduct
 );
@@ -58,7 +56,6 @@ router.post(
   checkVendorBlocked,
   uploadImages,
   validateProductCreation,
-  checkProductMiddleware,
   handleImageUpload,
   updateProduct
 );

@@ -104,6 +104,32 @@ export const fetchProducts = async (req, res) => {
           id
           title
           descriptionHtml
+          category { 
+            attributes
+            fullName
+            name
+          }
+          description
+          options {
+            name
+            value
+          }
+          variants {
+            edges {
+              node {
+                id
+                title
+                price
+                compareAtPrice
+                sku
+                barcode
+                displayName
+                image { 
+                  url
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -188,40 +214,63 @@ export const createProduct = async (req, res) => {
     //   },
     // });
 
-    // const optionResponse = await client.query({
-    //   data: {
-    //     query: CREATE_PRODUCT_OPTION_QUERY,
-    //     variables: {
-    //       productId: "gid://shopify/Product/9626225606903",
-    //       options: [
-    //         {
-    //           name: "Color",
-    //           values: [{ name: "Red" }, { name: "Blue" }, { name: "Green" }],
-    //         },
-    //       ],
-    //     },
-    //   },
-    // });
-
+    const optionResponse = await client.query({
+      data: {
+        query: CREATE_PRODUCT_OPTION_QUERY,
+        variables: {
+          productId: "gid://shopify/Product/9627173519607",
+          options: [
+            {
+              name: "Shape",
+              values: [{ name: "Square" }, { name: "Rounded" }],
+            },
+          ],
+        },
+      },
+    });
+    console.log(
+      optionResponse.body.data.productOptionsCreate.product.options[0].id
+    );
+    console.log("first");
     const variantResponse = await client.query({
       data: {
         query: CREATE_VARIANT_QUERY,
         variables: {
-          productId: "gid://shopify/Product/9626225606903",
+          productId: 'gid://shopify/Product/9627173519607',
           variants: {
             barcode: "123456789",
             compareAtPrice: "100",
             price: "60",
+            
             optionValues: [
               {
-                name: "Golden",
-                optionId: "gid://shopify/ProductOption/12109471514871",
+                name: "Rounded",
+                optionId:'gid://shopify/ProductOption/12110631895287',
               },
             ],
+            mediaSrc: [
+              "https://media.istockphoto.com/id/178619117/photo/motorcycle-helmet.jpg?s=612x612&w=0&k=20&c=pO2VOZ_M5kDBB4CcWo2VcXppmgA02SM0o8B26Lv2ga8=",
+            ],
+            inventoryQuantities: [
+              {
+                availableQuantity: 10,
+                locationId: "gid://shopify/Location/98387394807",
+              },
+            ],
+            inventoryItem: {
+              measurement: {
+                weight: {
+                  value: 5,
+                  unit: "GRAMS",
+                },
+              },
+              sku: "SH-1235",
+            },
           },
         },
       },
     });
+    console.log(variantResponse);
 
     // if (response.body.data.productCreate.userErrors.length > 0) {
     //   return res
@@ -239,7 +288,7 @@ export const createProduct = async (req, res) => {
       success: true,
       // product: response.body.data.productCreate.product,
       variants: variantResponse.body.data,
-      // options: optionResponse.body.data,
+      options: optionResponse.body.data,
     });
   } catch (error) {
     console.error("GraphQL Product Creation Error:", error.message);
