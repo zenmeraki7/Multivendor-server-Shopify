@@ -10,6 +10,7 @@ import stateRoutes from "./routes/stateRoutes.js";
 import countryRoutes from "./routes/countryRoutes.js";
 import businessTypesRoutes from "./routes//businessTYpesRoutes.js";
 import shopifyRoutes from "./routes/shopifyAuthRoutes.js";
+import imageRoutes from "./routes/imagesRoutes.js";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import { logMiddleware } from "./middlewares/logMiddleware.js";
 
@@ -39,6 +40,7 @@ app.use("/api/banks", bankRoutes);
 app.use("/api/states", stateRoutes);
 app.use("/api/countries", countryRoutes);
 app.use("/api/business-type", businessTypesRoutes);
+app.use("/api/images", imageRoutes);
 
 // Error Middleware
 app.use(errorMiddleware);

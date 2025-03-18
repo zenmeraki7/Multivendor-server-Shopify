@@ -1,32 +1,38 @@
 import Joi from "joi";
 
 const productCreationSchema = Joi.object({
-  title: Joi.string().required().trim(),
-  description: Joi.string().required(),
-  brand: Joi.string().required(),
-  category: Joi.string().required(), // You may want to replace this with ObjectId validation if needed
-  categoryType: Joi.string().required(),
-  subcategory: Joi.string().required(), // You may want to replace this with ObjectId validation if needed
-  price: Joi.number().required().min(0),
-  discountedPrice: Joi.number().required().min(0),
-  specifications: Joi.string().optional(),
-  imageIndex: Joi.string(),
-  images: Joi.optional(),
-  offers: Joi.array()
+  title: Joi.string().trim().required().messages({
+    "string.empty": "Title is required",
+  }),
+  description: Joi.string().required().messages({
+    "string.empty": "Description is required",
+  }),
+  status: Joi.string().valid("DRAFT", "ACTIVE", "ARCHIVED").default("ACTIVE"),
+  productType: Joi.string().optional(),
+  price: Joi.number().min(0).optional().messages({
+    "number.min": "Price must be a positive number",
+  }),
+  compareAtPrice: Joi.number().min(0).optional(),
+  images: Joi.array().items(Joi.string()), // Array of image IDs
+  tags: Joi.array().items(Joi.string()), // Tags should be an array of strings
+  meta: Joi.object({
+    title: Joi.string().optional(),
+    description: Joi.string().optional(),
+  }).optional(),
+  // Variants validation
+  variants: Joi.array()
     .items(
       Joi.object({
-        title: Joi.string().required(),
-        description: Joi.string().optional(),
-        discountPercentage: Joi.number().min(0).max(100).optional(),
-        validUntil: Joi.date().optional(),
+        barcode: Joi.string().optional(),
+        sku: Joi.string().optional(),
+        price: Joi.number().min(0).required().messages({
+          "number.min": "Variant price must be a positive number",
+        }),
+        inventoryQuantity: Joi.number().min(0).default(0),
+        image: Joi.string().optional(), // Image ID
       })
     )
     .optional(),
-  stock: Joi.number().min(0).default(0),
-  tags: Joi.string().optional(),
-  shippingDetails: Joi.string().optional(),
-  returnPolicy: Joi.string().optional(),
-  meta: Joi.string().optional(),
 });
 
 const variantSchema = Joi.object({

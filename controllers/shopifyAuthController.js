@@ -241,7 +241,6 @@ export const createProduct = async (req, res) => {
             barcode: "123456789",
             compareAtPrice: "100",
             price: "60",
-            
             optionValues: [
               {
                 name: "Rounded",

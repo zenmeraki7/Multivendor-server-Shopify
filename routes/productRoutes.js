@@ -26,6 +26,7 @@ import {
   validateVariant,
 } from "../helper/productValidation.js";
 import { checkVendorBlocked } from "../middlewares/checkVendorBlocked.js";
+import { authenticateShop } from "../middlewares/shopifyMiddleware.js";
 
 const router = express.Router();
 
@@ -41,11 +42,9 @@ router.get("/all-seller-product", authenticateVendor, getAllSellerProducts);
 // Vendor routes
 router.post(
   "/create",
-  authenticateVendor,
-checkVendorBlocked,
-  uploadImages,
-  validateProductCreation,
-  handleImageUpload,
+  // authenticateVendor,
+  // checkVendorBlocked,
+  // validateProductCreation,
   createProduct
 );
 
@@ -64,7 +63,7 @@ router.get("/get-one/:productId", authentication, getProductById); // View produ
 
 // Admin routes
 router.put("/status", authenticateAdmin, updateProductStatus); // Admin approves/rejects products
-router.put("/approve/:id", authenticateAdmin, approveProduct); // Admin approves/rejects products
+router.put("/approve/:id", authenticateShop, approveProduct); // Admin approves/rejects products
 router.put("/reject/:id", authenticateAdmin, rejectProduct); // Admin approves/rejects products
 
 router.post(
