@@ -3,7 +3,11 @@ import Notification from "../models/Notification.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import Joi from "joi";
 import shopify from "../config/shopify.js";
-import { CREATE_PRODUCT_QUERY } from "../services/graphql.js";
+import {
+  CREATE_PRODUCT_QUERY,
+  CREATE_VARIANT_QUERY,
+} from "../services/graphql.js";
+import Variants from "../models/Variants.js";
 
 // Joi schema for product approval/rejection validation
 const productApprovalSchema = Joi.object({
@@ -15,10 +19,24 @@ const productApprovalSchema = Joi.object({
 export const createProduct = async (req, res) => {
   try {
     console.log("first");
+    const { variants, ...others } = req.body;
     // Create new product (status 'pending' as it's awaiting approval)
-    const newProduct = new Product(req.body);
+    const newProduct = new Product(others);
 
     await newProduct.save();
+    console.log(variants);
+    variants?.map(async (item, index) => {
+      try {
+        const newVariants = await Variants.create({
+          ...item,
+          productId: newProduct._id,
+          compareAtPrice: newProduct.compareAtPrice,
+        });
+      } catch (err) {
+        console.log(err);
+        return res.status(400).json({ error: err });
+      }
+    });
 
     // await Notification.create({
     //   title: "New Product Request",
@@ -571,6 +589,12 @@ export const approveProduct = async (req, res) => {
     //   "seller",
     //   "_id email fullName"
     // );
+    const variants = await Variants.find({ productId: id });
+    // .populate(
+    //   "seller",
+    //   "_id email fullName"
+    // );
+    console.log(variants.length);
     if (!product) {
       return res.status(404).json({ message: "Product not found." });
     }
@@ -588,6 +612,16 @@ export const approveProduct = async (req, res) => {
             productType: product.productType,
             tags: product.tags,
             seo: product.meta,
+            productOptions: product.productOptions.map((item) => {
+              return {
+                name: item.name,
+                values: item.values?.map((val) => {
+                  return {
+                    name: val,
+                  };
+                }),
+              };
+            }),
             // handle: "helmet-nova",
           },
           media: product.images?.map((item) => {
@@ -604,6 +638,63 @@ export const approveProduct = async (req, res) => {
       return res
         .status(400)
         .json({ errors: response.body.data.productCreate.userErrors });
+    }
+
+    let variantResponse = [];
+    if (variants.length > 0) {
+      variantResponse = await client.query({
+        data: {
+          query: CREATE_VARIANT_QUERY,
+          variables: {
+            productId: response.body.data.productCreate.product.id,
+            variants: variants.map((item) => {
+              return {
+                barcode: item.barcode || "",
+                compareAtPrice: item.compareAtPrice.toString() || "",
+                price: item.price.toString() || "",
+                optionValues: item.variantTypes.map((val) => {
+                  return {
+                    name: val.value,
+                    optionId:
+                      response.body.data.productCreate.product.options.find(
+                        (op) => op.name == val.option
+                      )?.id,
+                  }
+                }),
+                // mediaSrc: [
+                //   "https://media.istockphoto.com/id/178619117/photo/motorcycle-helmet.jpg?s=612x612&w=0&k=20&c=pO2VOZ_M5kDBB4CcWo2VcXppmgA02SM0o8B26Lv2ga8=",
+                // ],
+                inventoryQuantities: [
+                  {
+                    availableQuantity: item.inventoryQuantity,
+                    locationId: "gid://shopify/Location/98387394807",
+                  },
+                ],
+                inventoryItem: {
+                  // measurement: {
+                  //   weight: {
+                  //     value: 5,
+                  //     unit: "GRAMS",
+                  //   },
+                  // },
+                  sku: item.sku || "",
+                },
+              };
+            }),
+          },
+        },
+      });
+    }
+
+    console.log(variantResponse);
+
+    if (
+      variantResponse.body.data.productVariantsBulkCreate?.userErrors?.length >
+      0
+    ) {
+      return res.status(400).json({
+        errors: variantResponse.body.data.productVariantsBulkCreate.userErrors,
+      });
     }
 
     // Set the vendor as verified after admin approval
@@ -629,6 +720,9 @@ export const approveProduct = async (req, res) => {
 
     res.status(200).json({
       message: "Product approved successfully",
+      product: response.body.data.productCreate.product,
+      variants:
+        variantResponse.body.data?.productVariantsBulkCreate?.productVariants,
     });
   } catch (error) {
     res

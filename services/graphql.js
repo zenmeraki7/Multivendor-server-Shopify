@@ -2,9 +2,18 @@
 export const CREATE_PRODUCT_QUERY = `
   mutation CreateProduct($product: ProductCreateInput!,$media: [CreateMediaInput!]) {
     productCreate(product: $product, media: $media) {
-      product {
+        product {
           id
           title
+          options {
+            id
+            name
+            position
+            optionValues {
+              id
+              name
+            }
+          }
           media(first: 10) {
             nodes {
               alt
