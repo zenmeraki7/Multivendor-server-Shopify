@@ -12,7 +12,7 @@ const reviewSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     }, // Reference to the product
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "Users", required: true }, // Reference to the user
+    vendor: { type: mongoose.Schema.Types.ObjectId, ref: "Vendor", required: true }, // Reference to the user
     rating: { type: Number, required: true, min: 1, max: 5 }, // Rating (1-5)
     comment: { type: String }, // User's review
     images: [imageSchema], // Optional: Images related to the review

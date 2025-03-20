@@ -2,6 +2,12 @@ import Product from "../models/Product.js";
 import Notification from "../models/Notification.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import Joi from "joi";
+import shopify from "../config/shopify.js";
+import {
+  CREATE_PRODUCT_QUERY,
+  CREATE_VARIANT_QUERY,
+} from "../services/graphql.js";
+import Variants from "../models/Variants.js";
 
 // Joi schema for product approval/rejection validation
 const productApprovalSchema = Joi.object({
@@ -11,54 +17,35 @@ const productApprovalSchema = Joi.object({
 
 // Vendor creates a product (unapproved)
 export const createProduct = async (req, res) => {
-  console.log(req.uploadedImages);
-  console.log(req.thumbnailUrl);
-  if (!req.uploadedImages?.length) {
-    return res.status(404).json({ message: "Missing images" });
-  }
-  if (!req.thumbnailUrl) {
-    return res.status(404).json({ message: "Missing thumbnail" });
-  }
   try {
-    const vendorId = req.vendor._id; // Adjust this based on your middleware
-    console.log(vendorId);
-
-    if (!vendorId) {
-      return res.status(404).json({ message: "Missing vendor id" });
-    }
-    // req.body.price = 999.0;
-    // req.body.discountedPrice = 799.0;
-    // req.body.stock = 50;
-    req.body.tags = JSON.parse(req.body.tags).toString().split(",");
-    req.body.shippingDetails = JSON.parse(req.body.shippingDetails);
-    req.body.returnPolicy = JSON.parse(req.body.returnPolicy);
-    req.body.specifications = JSON.parse(req.body.specifications);
-    const metaField = JSON.parse(req.body.meta);
-    req.body.meta = {
-      ...metaField,
-      keywords: metaField.keywords.toString().split(","),
-    };
-    req.body.thumbnail = { url: req.thumbnailUrl };
-    req.body.images = req.uploadedImages?.map((item, index) => {
-      return {
-        url: item.url,
-      };
-    });
-    console.log(req.body);
-    console.log(req.body);
+    console.log("first");
+    const { variants, ...others } = req.body;
     // Create new product (status 'pending' as it's awaiting approval)
-    const newProduct = new Product({ seller: vendorId, ...req.body });
+    const newProduct = new Product(others);
 
     await newProduct.save();
-
-    await Notification.create({
-      title: "New Product Request",
-      message: `Vendor "${req.vendor.companyName}" has created a new product "${newProduct.title}" and is awaiting approval.`,
-      type: "Product",
-      vendorId: vendorId,
-      link: `/admin/products/${newProduct._id}`, // Link to the product page in the admin panel
-      to: "admin",
+    console.log(variants);
+    variants?.map(async (item, index) => {
+      try {
+        const newVariants = await Variants.create({
+          ...item,
+          productId: newProduct._id,
+          compareAtPrice: newProduct.compareAtPrice,
+        });
+      } catch (err) {
+        console.log(err);
+        return res.status(400).json({ error: err });
+      }
     });
+
+    // await Notification.create({
+    //   title: "New Product Request",
+    //   message: `Vendor "${req.vendor.companyName}" has created a new product "${newProduct.title}" and is awaiting approval.`,
+    //   type: "Product",
+    //   vendorId: vendorId,
+    //   link: `/admin/products/${newProduct._id}`, // Link to the product page in the admin panel
+    //   to: "admin",
+    // });
 
     res.status(201).json({
       message: "Product created successfully. Awaiting admin approval.",
@@ -280,7 +267,16 @@ export const getAllActiveProducts = async (req, res) => {
 export const getAllProducts = async (req, res) => {
   try {
     const query = {};
-    const { inStock, isActive, category, subcategory, categoryType, search, minPrice, maxPrice } = req.query;
+    const {
+      inStock,
+      isActive,
+      category,
+      subcategory,
+      categoryType,
+      search,
+      minPrice,
+      maxPrice,
+    } = req.query;
 
     // Handle boolean filters
     if (inStock === "true") query.stock = { $gt: 0 };
@@ -301,10 +297,18 @@ export const getAllProducts = async (req, res) => {
     if (category && category !== "all" && /^[0-9a-fA-F]{24}$/.test(category)) {
       query.category = category;
     }
-    if (subcategory && subcategory !== "all" && /^[0-9a-fA-F]{24}$/.test(subcategory)) {
+    if (
+      subcategory &&
+      subcategory !== "all" &&
+      /^[0-9a-fA-F]{24}$/.test(subcategory)
+    ) {
       query.subcategory = subcategory;
     }
-    if (categoryType && categoryType !== "all" && /^[0-9a-fA-F]{24}$/.test(categoryType)) {
+    if (
+      categoryType &&
+      categoryType !== "all" &&
+      /^[0-9a-fA-F]{24}$/.test(categoryType)
+    ) {
       query.categoryType = categoryType;
     }
 
@@ -321,7 +325,9 @@ export const getAllProducts = async (req, res) => {
 
     // Fetch products
     const products = await Product.find(query)
-      .select("_id title thumbnail discountedPrice brand categoryType category subcategory seller stock isApproved createdAt")
+      .select(
+        "_id title thumbnail discountedPrice brand categoryType category subcategory seller stock isApproved createdAt"
+      )
       .populate("seller", "companyName companyIcon")
       .populate("categoryType", "name")
       .populate("category", "name")
@@ -336,7 +342,8 @@ export const getAllProducts = async (req, res) => {
       const regexSearch = new RegExp(search, "i");
       filteredProducts = products.filter(
         (product) =>
-          (product.categoryType && regexSearch.test(product.categoryType.name)) ||
+          (product.categoryType &&
+            regexSearch.test(product.categoryType.name)) ||
           (product.category && regexSearch.test(product.category.name)) ||
           (product.subcategory && regexSearch.test(product.subcategory.name))
       );
@@ -346,7 +353,8 @@ export const getAllProducts = async (req, res) => {
 
     res.status(200).json({
       message: "Products fetched successfully",
-      data: filteredProducts.length < products.length ? filteredProducts : products,
+      data:
+        filteredProducts.length < products.length ? filteredProducts : products,
       success: true,
       currentPage: page,
       totalPages: Math.ceil(totalProducts / limit),
@@ -355,11 +363,11 @@ export const getAllProducts = async (req, res) => {
     });
   } catch (err) {
     console.error("Error in getAllProducts:", err);
-    res.status(500).json({ message: "Error fetching products", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching products", error: err.message });
   }
 };
-
-
 
 // Get all seller products (for seller to view all)
 export const getAllSellerProducts = async (req, res) => {
@@ -396,7 +404,6 @@ export const getAllSellerProducts = async (req, res) => {
         { "subcategory.name": { $regex: search, $options: "i" } }, // Search in subcategory
       ];
     }
-    
 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -577,12 +584,117 @@ export const approveProduct = async (req, res) => {
     const { id } = req.params;
     const { verificationRemarks } = req.body;
 
-    const product = await Product.findById(id).populate(
-      "seller",
-      "_id email fullName"
-    );
+    const product = await Product.findById(id).populate("images");
+    // .populate(
+    //   "seller",
+    //   "_id email fullName"
+    // );
+    const variants = await Variants.find({ productId: id });
+    // .populate(
+    //   "seller",
+    //   "_id email fullName"
+    // );
+    console.log(variants.length);
     if (!product) {
       return res.status(404).json({ message: "Product not found." });
+    }
+
+    const client = new shopify.clients.Graphql({ session: req.session });
+
+    const response = await client.query({
+      data: {
+        query: CREATE_PRODUCT_QUERY,
+        variables: {
+          product: {
+            title: product.title,
+            descriptionHtml: product.description,
+            // vendor: "Helmet",
+            productType: product.productType,
+            tags: product.tags,
+            seo: product.meta,
+            productOptions: product.productOptions.map((item) => {
+              return {
+                name: item.name,
+                values: item.values?.map((val) => {
+                  return {
+                    name: val,
+                  };
+                }),
+              };
+            }),
+            // handle: "helmet-nova",
+          },
+          media: product.images?.map((item) => {
+            return {
+              originalSource: item.url,
+              mediaContentType: "IMAGE",
+            };
+          }),
+        },
+      },
+    });
+
+    if (response.body.data.productCreate.userErrors.length > 0) {
+      return res
+        .status(400)
+        .json({ errors: response.body.data.productCreate.userErrors });
+    }
+
+    let variantResponse = [];
+    if (variants.length > 0) {
+      variantResponse = await client.query({
+        data: {
+          query: CREATE_VARIANT_QUERY,
+          variables: {
+            productId: response.body.data.productCreate.product.id,
+            variants: variants.map((item) => {
+              return {
+                barcode: item.barcode || "",
+                compareAtPrice: item.compareAtPrice.toString() || "",
+                price: item.price.toString() || "",
+                optionValues: item.variantTypes.map((val) => {
+                  return {
+                    name: val.value,
+                    optionId:
+                      response.body.data.productCreate.product.options.find(
+                        (op) => op.name == val.option
+                      )?.id,
+                  }
+                }),
+                // mediaSrc: [
+                //   "https://media.istockphoto.com/id/178619117/photo/motorcycle-helmet.jpg?s=612x612&w=0&k=20&c=pO2VOZ_M5kDBB4CcWo2VcXppmgA02SM0o8B26Lv2ga8=",
+                // ],
+                inventoryQuantities: [
+                  {
+                    availableQuantity: item.inventoryQuantity,
+                    locationId: "gid://shopify/Location/98387394807",
+                  },
+                ],
+                inventoryItem: {
+                  // measurement: {
+                  //   weight: {
+                  //     value: 5,
+                  //     unit: "GRAMS",
+                  //   },
+                  // },
+                  sku: item.sku || "",
+                },
+              };
+            }),
+          },
+        },
+      });
+    }
+
+    console.log(variantResponse);
+
+    if (
+      variantResponse.body.data.productVariantsBulkCreate?.userErrors?.length >
+      0
+    ) {
+      return res.status(400).json({
+        errors: variantResponse.body.data.productVariantsBulkCreate.userErrors,
+      });
     }
 
     // Set the vendor as verified after admin approval
@@ -591,23 +703,26 @@ export const approveProduct = async (req, res) => {
     await product.save();
 
     // Create notification for the vendor
-    await Notification.create({
-      title: "Product Approved",
-      message: `Your product "${product.title}" has been approved.`,
-      type: "Product",
-      vendorId: product.seller._id,
-      link: `/product/view`, // Link to the vendor dashboard
-      to: product.seller._id,
-    });
+    // await Notification.create({
+    //   title: "Product Approved",
+    //   message: `Your product "${product.title}" has been approved.`,
+    //   type: "Product",
+    //   vendorId: product.seller._id,
+    //   link: `/product/view`, // Link to the vendor dashboard
+    //   to: product.seller._id,
+    // });
 
-    await sendEmail(
-      product.seller.email,
-      "Product approved",
-      `Dear ${product.seller.fullName},\n\nYour product "${product.title}" has been approved by the admin.`
-    );
+    // await sendEmail(
+    //   product.seller.email,
+    //   "Product approved",
+    //   `Dear ${product.seller.fullName},\n\nYour product "${product.title}" has been approved by the admin.`
+    // );
 
     res.status(200).json({
       message: "Product approved successfully",
+      product: response.body.data.productCreate.product,
+      variants:
+        variantResponse.body.data?.productVariantsBulkCreate?.productVariants,
     });
   } catch (error) {
     res

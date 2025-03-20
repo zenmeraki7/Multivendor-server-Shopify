@@ -43,7 +43,7 @@ export const uploadImages = upload.fields([
 export const uploadToCloudinary = async (filePath) => {
   try {
     const result = await cloudinaryV2.uploader.upload(filePath, {
-      folder: "multivendor",
+      folder: "shopify-multi-vendor",
     });
     return result; // Resolves with the upload result
   } catch (error) {
@@ -74,6 +74,7 @@ export const handleImageUpload = async (req, res, next) => {
       const image = req.files.image[0];
       const cloudinaryResult = await uploadToCloudinary(image.path);
       req.image = cloudinaryResult.secure_url;
+      req.cloudinaryId = cloudinaryResult.public_id;
     }
     if (req.files?.PAN) {
       const PANdocument = req.files.PAN[0];

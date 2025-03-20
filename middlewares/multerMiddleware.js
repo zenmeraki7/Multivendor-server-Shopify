@@ -1,29 +1,16 @@
 import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import cloudinary from "../config/cloudinaryConfig.js";
 
-//storage (location and filename)
-const storage = multer.diskStorage({
-  destination: (req, file, callback) => {
-    callback(null, "./uploads");
-  },
-  filename: (req, file, callback) => {
-    console.log(file.originalname);
-    callback(null, `image-${Date.now()}-${file.originalname}`);
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "edupay", // Change to your desired folder
+    format: async (req, file) => "png", // Supports jpeg, png, etc.
+    public_id: (req, file) => file.originalname.split(".")[0], // Use file name as public_id
   },
 });
 
-//file filter (format of files)
-const fileFilter = (req, file, callback) => {
-  if (
-    file.mimetype == "image/jpg" ||
-    file.mimetype == "image/jpeg" ||
-    file.mimetype == "image/png" ||
-    file.mimetype == "image/webp"
-  ) {
-    callback(null, true);
-  } else {
-    callback(null, false);
-  }
-};
+const upload = multer({ storage });
 
-//multer middleware
-export const upload = multer({ storage, fileFilter });
+export default upload;

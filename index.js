@@ -2,20 +2,15 @@ import express from "express";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import cors from "cors";
-import authRoutes from "./routes/authRoutes.js";
 import vendorRoutes from "./routes/vendorRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
-import cartRoutes from "./routes/cartRoutes.js";
-import wishlistRoutes from "./routes/wishlistRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
-import categoryTypeRoutes from "./routes/categoryTypesRoutes.js";
-import categoryRoutes from "./routes/categoryRoutes.js";
-import subcategoryRoutes from "./routes/subcategoryRoutes.js";
 import bankRoutes from "./routes/bankRoutes.js";
 import stateRoutes from "./routes/stateRoutes.js";
 import countryRoutes from "./routes/countryRoutes.js";
 import businessTypesRoutes from "./routes//businessTYpesRoutes.js";
-import adminRoutes from "./routes/adminAuthRoutes.js";
+import shopifyRoutes from "./routes/shopifyAuthRoutes.js";
+import imageRoutes from "./routes/imagesRoutes.js";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import { logMiddleware } from "./middlewares/logMiddleware.js";
 
@@ -37,20 +32,15 @@ app.use(cors());
 // Log all API calls
 app.use(logMiddleware);
 
-app.use("/api/admin", adminRoutes);
-app.use("/api/auth", authRoutes);
+app.use("/", shopifyRoutes);
 app.use("/api/vendor", vendorRoutes);
 app.use("/api/product", productRoutes);
-app.use("/api/cart", cartRoutes);
-app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/review", reviewRoutes);
-app.use("/api/category-type", categoryTypeRoutes);
-app.use("/api/category", categoryRoutes);
-app.use("/api/subcategory", subcategoryRoutes);
 app.use("/api/banks", bankRoutes);
 app.use("/api/states", stateRoutes);
 app.use("/api/countries", countryRoutes);
 app.use("/api/business-type", businessTypesRoutes);
+app.use("/api/images", imageRoutes);
 
 // Error Middleware
 app.use(errorMiddleware);
