@@ -6,6 +6,7 @@ import shopify from "../config/shopify.js";
 import {
   CREATE_PRODUCT_QUERY,
   CREATE_VARIANT_QUERY,
+  UPDATE_VARIANT_QUERY,
 } from "../services/graphql.js";
 import Variants from "../models/Variants.js";
 
@@ -24,7 +25,7 @@ export const createProduct = async (req, res) => {
     const newProduct = new Product(others);
 
     await newProduct.save();
-    console.log(variants);
+    console.log(variants[0].variantTypes);
     variants?.map(async (item, index) => {
       try {
         const newVariants = await Variants.create({
@@ -47,7 +48,7 @@ export const createProduct = async (req, res) => {
     //   to: "admin",
     // });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Product created successfully. Awaiting admin approval.",
       product: newProduct,
     });
@@ -585,15 +586,9 @@ export const approveProduct = async (req, res) => {
     const { verificationRemarks } = req.body;
 
     const product = await Product.findById(id).populate("images");
-    // .populate(
-    //   "seller",
-    //   "_id email fullName"
-    // );
+
     const variants = await Variants.find({ productId: id });
-    // .populate(
-    //   "seller",
-    //   "_id email fullName"
-    // );
+
     console.log(variants.length);
     if (!product) {
       return res.status(404).json({ message: "Product not found." });
@@ -611,7 +606,7 @@ export const approveProduct = async (req, res) => {
             // vendor: "Helmet",
             productType: product.productType,
             tags: product.tags,
-            seo: product.meta,
+            seo: product.seo,
             productOptions: product.productOptions.map((item) => {
               return {
                 name: item.name,
@@ -640,6 +635,41 @@ export const approveProduct = async (req, res) => {
         .json({ errors: response.body.data.productCreate.userErrors });
     }
 
+    const existingShopifyVariant =
+      response.body.data.productCreate.product?.variants?.edges[0]?.node;
+
+    const existingVariant = variants.find(
+      (item) => item.variant == existingShopifyVariant?.title
+    );
+
+    const creatingVariant = variants.filter(
+      (item) => item.variant != existingShopifyVariant?.title
+    );
+
+    const variantUpdateResponse = await client.query({
+      data: {
+        query: UPDATE_VARIANT_QUERY,
+        variables: {
+          productId: response.body.data.productCreate.product.id,
+          variants: {
+            id: existingShopifyVariant?.id,
+            barcode: existingVariant?.barcode,
+            compareAtPrice: existingVariant.compareAtPrice.toString() || "",
+            price: existingVariant.price.toString() || "",
+            inventoryQuantities: [
+              {
+                availableQuantity: existingVariant.quantity,
+                locationId: "gid://shopify/Location/98387394807",
+              },
+            ],
+            inventoryItem: {
+              sku: existingVariant.sku || "",
+            },
+          },
+        },
+      },
+    });
+
     let variantResponse = [];
     if (variants.length > 0) {
       variantResponse = await client.query({
@@ -647,7 +677,7 @@ export const approveProduct = async (req, res) => {
           query: CREATE_VARIANT_QUERY,
           variables: {
             productId: response.body.data.productCreate.product.id,
-            variants: variants.map((item) => {
+            variants: creatingVariant.map((item) => {
               return {
                 barcode: item.barcode || "",
                 compareAtPrice: item.compareAtPrice.toString() || "",
@@ -659,14 +689,14 @@ export const approveProduct = async (req, res) => {
                       response.body.data.productCreate.product.options.find(
                         (op) => op.name == val.option
                       )?.id,
-                  }
+                  };
                 }),
                 // mediaSrc: [
                 //   "https://media.istockphoto.com/id/178619117/photo/motorcycle-helmet.jpg?s=612x612&w=0&k=20&c=pO2VOZ_M5kDBB4CcWo2VcXppmgA02SM0o8B26Lv2ga8=",
                 // ],
                 inventoryQuantities: [
                   {
-                    availableQuantity: item.inventoryQuantity,
+                    availableQuantity: item.quantity,
                     locationId: "gid://shopify/Location/98387394807",
                   },
                 ],
@@ -694,6 +724,17 @@ export const approveProduct = async (req, res) => {
     ) {
       return res.status(400).json({
         errors: variantResponse.body.data.productVariantsBulkCreate.userErrors,
+        message: "error while creating variant",
+      });
+    }
+
+    if (
+      variantResponse.body.data.productVariantsBulkUpdate?.userErrors?.length >
+      0
+    ) {
+      return res.status(400).json({
+        errors: variantResponse.body.data.productVariantsBulkUpdate.userErrors,
+        message: "error while updating variant",
       });
     }
 
@@ -721,8 +762,6 @@ export const approveProduct = async (req, res) => {
     res.status(200).json({
       message: "Product approved successfully",
       product: response.body.data.productCreate.product,
-      variants:
-        variantResponse.body.data?.productVariantsBulkCreate?.productVariants,
     });
   } catch (error) {
     res

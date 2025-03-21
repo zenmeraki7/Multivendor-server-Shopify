@@ -35,7 +35,7 @@ const productSchema = new mongoose.Schema(
     },
     // reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }], // Array of review IDs
     tags: [{ type: String }], // Search tags (e.g., "smartphone", "android")
-    meta: {
+    seo: {
       title: { type: String }, // SEO meta title
       description: { type: String }, // SEO meta description
     },
