@@ -14,6 +14,18 @@ export const CREATE_PRODUCT_QUERY = `
               name
             }
           }
+          variants(first: 10) {
+            edges {
+              node {
+                id
+                title
+                selectedOptions {
+                  name
+                  value
+                }
+              } 
+            }
+          }
           media(first: 10) {
             nodes {
               alt
@@ -36,6 +48,35 @@ export const CREATE_PRODUCT_QUERY = `
 export const CREATE_VARIANT_QUERY = `
   mutation ProductVariantsCreate($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
   productVariantsBulkCreate(productId: $productId, variants: $variants) {
+    productVariants {
+      id
+      title
+      price
+      barcode
+      sku
+      compareAtPrice
+      inventoryQuantity
+      selectedOptions {
+            name
+            value
+          }
+      image {
+        url
+        altText
+      }
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+`;
+
+// GraphQL mutation for creating a product in Shopify
+export const UPDATE_VARIANT_QUERY = `
+  mutation ProductVariantsUpdate($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+  productVariantsBulkUpdate(productId: $productId, variants: $variants) {
     productVariants {
       id
       title
