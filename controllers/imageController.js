@@ -28,3 +28,17 @@ export const uploadImageController = async (req, res) => {
       .json({ message: "Image upload failed", error: error.message });
   }
 };
+
+export const getImagesByUser = async (req, res) => {
+  try {
+    const images = await Images.find();
+
+    res
+      .status(201)
+      .json({ message: "Image fetched successfully", data: images });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Image fetching failed", error: error.message });
+  }
+};

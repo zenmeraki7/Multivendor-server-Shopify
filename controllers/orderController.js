@@ -14,6 +14,10 @@ export const fetchAllOrders = async (req, res) => {
           node {
             id
             updatedAt
+            additionalFees {
+              id
+              name
+            }
           }
         }
       }
