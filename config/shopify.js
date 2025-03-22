@@ -9,7 +9,7 @@ dotenv.config();
 const shopify = shopifyApi ({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET,
-  scopes: ["read_products", "write_products"],
+  scopes: ["read_products", "write_products","read_orders","read_all_orders"],
   hostName: process.env.HOSTNAME,
   apiVersion: LATEST_API_VERSION,
   isEmbeddedApp: false, // ✅ No adapter needed for Node.js

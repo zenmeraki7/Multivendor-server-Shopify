@@ -13,7 +13,7 @@ import shopifyRoutes from "./routes/shopifyAuthRoutes.js";
 import imageRoutes from "./routes/imagesRoutes.js";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import { logMiddleware } from "./middlewares/logMiddleware.js";
-
+import orderRoutes from "./routes/orderRoutes.js"
 dotenv.config();
 connectDB();
 
@@ -41,7 +41,7 @@ app.use("/api/states", stateRoutes);
 app.use("/api/countries", countryRoutes);
 app.use("/api/business-type", businessTypesRoutes);
 app.use("/api/images", imageRoutes);
-
+app.use("/api/orders",orderRoutes)
 // Error Middleware
 app.use(errorMiddleware);
 
