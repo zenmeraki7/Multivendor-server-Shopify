@@ -1,6 +1,8 @@
 import Shop from "../models/Shop.js";
 
 export const authenticateShop = async (req, res, next) => {
+  console.log("hey");
+
   const reqShop = req.query.shop;
   try {
     const shop = await Shop.findOne({ shop: reqShop });

@@ -44,7 +44,7 @@ export const CREATE_PRODUCT_QUERY = `
   }
 `;
 
-// GraphQL mutation for creating a product in Shopify
+// GraphQL mutation for creating a variant in Shopify
 export const CREATE_VARIANT_QUERY = `
   mutation ProductVariantsCreate($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
   productVariantsBulkCreate(productId: $productId, variants: $variants) {
@@ -73,7 +73,7 @@ export const CREATE_VARIANT_QUERY = `
 }
 `;
 
-// GraphQL mutation for creating a product in Shopify
+// GraphQL mutation for updating a product in Shopify
 export const UPDATE_VARIANT_QUERY = `
   mutation ProductVariantsUpdate($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
   productVariantsBulkUpdate(productId: $productId, variants: $variants) {
