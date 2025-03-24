@@ -19,7 +19,7 @@ import {
   resetPasswordVendor,
   blockVendor,
   addVendor,
-  changeVendorPassword
+  changeVendorPassword,
 } from "../controllers/vendorController.js";
 import {
   handleImageUpload,
@@ -35,6 +35,7 @@ import {
   authenticateVendor,
   authentication,
 } from "../middlewares/jwtMiddleware.js";
+import { authenticateShop } from "../middlewares/shopifyMiddleware.js";
 
 const router = express.Router();
 
@@ -57,22 +58,22 @@ router.post("/create-vendor-by-admin", authenticateAdmin, addSellerByAdmin);
 router.post("/login", loginVendor);
 
 // Admin views all vendors
-router.get("/all", authenticateAdmin, getAllVendors);
+router.get("/all", authenticateShop, getAllVendors);
 
 // Admin views a single vendor
-router.get("/get-one/:id", authenticateAdmin, getVendorById);
+router.get("/get-one/:id", authenticateShop, getVendorById);
 
 //views a single vendor by token
 router.get("/auth-token", authentication, getLoginedVendor);
 
 // Admin approves a vendor
-router.put("/approve/:id", authenticateAdmin, approveVendor);
+router.put("/approve/:id", authenticateShop, approveVendor);
 
 // Admin rejects a vendor
 router.put("/reject/:id", authenticateAdmin, rejectVendor);
 
 // Admin Blocks a vendor
-router.put("/blocks/:id", authenticateAdmin,blockVendor)
+router.put("/blocks/:id", authenticateAdmin, blockVendor);
 
 // Route to add document details
 router.put(
@@ -126,7 +127,7 @@ router.put(
 // Route to update personal details
 router.put("/update-details", authentication, updateVendorDetails);
 
-// Route to update password 
+// Route to update password
 router.post("/forgot-password", forgotPasswordVendor);
 router.post("/reset-password/:token", resetPasswordVendor);
 
