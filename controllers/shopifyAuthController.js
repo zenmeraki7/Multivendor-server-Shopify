@@ -101,6 +101,18 @@ export const isShopLoginedAuthentication = async (req, res) => {
     res.status(403).json({ error: "Invalid or expired token" });
   }
 };
+
+export const logoutAdmin = async (req, res) => {
+  res.cookie("authToken", "", {
+    httpOnly: true,
+    secure: false, // Set to `true` in production (HTTPS)
+    sameSite: "Lax",
+    expires: new Date(0), // Expire the cookie immediately
+  });
+
+  res.status(200).json({ message: "Logged out successfully" });
+};
+
 export const adminCreateAccount = async (req, res) => {
   const { email, password, shop } = req.body;
   try {
