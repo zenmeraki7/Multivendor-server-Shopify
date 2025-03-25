@@ -2,7 +2,7 @@ import Shop from "../models/Shop.js";
 import jwt from "jsonwebtoken";
 
 export const authenticateShop = async (req, res, next) => {
-  const token = req.cookies.authToken; // Get token from cookies
+  const token = req.cookies?.authToken; // Get token from cookies
   if (!token)
     return res.status(401).json({ error: "Unauthorized, token not found" });
 
