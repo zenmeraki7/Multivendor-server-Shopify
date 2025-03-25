@@ -22,7 +22,7 @@ export const createProduct = async (req, res) => {
     console.log("first");
     const { variants, ...others } = req.body;
     // Create new product (status 'pending' as it's awaiting approval)
-    const newProduct = new Product(others);
+    const newProduct = new Product({ ...others, vendor: req.vendor._id });
 
     await newProduct.save();
     console.log(variants[0].variantTypes);
@@ -326,13 +326,8 @@ export const getAllProducts = async (req, res) => {
 
     // Fetch products
     const products = await Product.find(query)
-      .select(
-        "_id title thumbnail discountedPrice brand categoryType category subcategory seller stock isApproved createdAt"
-      )
-      .populate("seller", "companyName companyIcon")
-      .populate("categoryType", "name")
-      .populate("category", "name")
-      .populate("subcategory", "name")
+      .populate("vendor")
+      .populate("images")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
@@ -459,10 +454,8 @@ export const getProductById = async (req, res) => {
       product = await Product.findById(productId).select(neededFields);
     } else {
       product = await Product.findById(productId)
-        .populate("seller", "companyName email")
-        .populate("category", "name")
-        .populate("subcategory", "name")
-        .populate("categoryType", "name");
+        .populate("vendor", "companyName email")
+        .populate("images");
     }
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -641,7 +634,7 @@ export const approveProduct = async (req, res) => {
     const existingVariant = variants.find(
       (item) => item.variant == existingShopifyVariant?.title
     );
-
+    console.log(existingVariant);
     const creatingVariant = variants.filter(
       (item) => item.variant != existingShopifyVariant?.title
     );
@@ -651,21 +644,17 @@ export const approveProduct = async (req, res) => {
         query: UPDATE_VARIANT_QUERY,
         variables: {
           productId: response.body.data.productCreate.product.id,
-          variants: {
-            id: existingShopifyVariant?.id,
-            barcode: existingVariant?.barcode,
-            compareAtPrice: existingVariant.compareAtPrice.toString() || "",
-            price: existingVariant.price.toString() || "",
-            inventoryQuantities: [
-              {
-                availableQuantity: existingVariant.quantity,
-                locationId: "gid://shopify/Location/98387394807",
+          variants: [
+            {
+              id: existingShopifyVariant?.id,
+              barcode: existingVariant?.barcode,
+              compareAtPrice: existingVariant.compareAtPrice.toString() || "",
+              price: existingVariant.price.toString() || "",
+              inventoryItem: {
+                sku: existingVariant.sku || "",
               },
-            ],
-            inventoryItem: {
-              sku: existingVariant.sku || "",
             },
-          },
+          ],
         },
       },
     });
@@ -729,11 +718,12 @@ export const approveProduct = async (req, res) => {
     }
 
     if (
-      variantResponse.body.data.productVariantsBulkUpdate?.userErrors?.length >
-      0
+      variantUpdateResponse.body.data.productVariantsBulkUpdate?.userErrors
+        ?.length > 0
     ) {
       return res.status(400).json({
-        errors: variantResponse.body.data.productVariantsBulkUpdate.userErrors,
+        errors:
+          variantUpdateResponse.body.data.productVariantsBulkUpdate.userErrors,
         message: "error while updating variant",
       });
     }
