@@ -13,7 +13,8 @@ import shopifyRoutes from "./routes/shopifyAuthRoutes.js";
 import imageRoutes from "./routes/imagesRoutes.js";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import { logMiddleware } from "./middlewares/logMiddleware.js";
-import orderRoutes from "./routes/orderRoutes.js"
+import orderRoutes from "./routes/orderRoutes.js";
+import cookieParser from "cookie-parser";
 dotenv.config();
 connectDB();
 
@@ -22,15 +23,16 @@ const app = express();
 app.use(express.json());
 // Specify the frontend URL in the CORS configuration
 const corsOptions = {
-  origin: "https://multi-vendor-frontend-lyart.vercel.app",
-  methods: ["GET", "POST", "PUT", "DELETE"], // Adjust based on your needs
-  credentials: true, // If you're using cookies or other credentials
+  origin: "http://localhost:5173", // Update this to match your frontend URL
+  credentials: true, // 👈 Allows cookies & authentication headers
 };
 
-app.use(cors());
+app.use(cors(corsOptions));
 
 // Log all API calls
 app.use(logMiddleware);
+app.use(cookieParser()); // 👈 Required to read cookies
+
 
 app.use("/", shopifyRoutes);
 app.use("/api/vendor", vendorRoutes);
@@ -41,7 +43,7 @@ app.use("/api/states", stateRoutes);
 app.use("/api/countries", countryRoutes);
 app.use("/api/business-type", businessTypesRoutes);
 app.use("/api/images", imageRoutes);
-app.use("/api/orders",orderRoutes)
+app.use("/api/orders", orderRoutes);
 // Error Middleware
 app.use(errorMiddleware);
 

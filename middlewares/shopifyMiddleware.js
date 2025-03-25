@@ -1,22 +1,19 @@
 import Shop from "../models/Shop.js";
+import jwt from "jsonwebtoken";
 
 export const authenticateShop = async (req, res, next) => {
-  console.log("hey");
+  const token = req.cookies?.authToken; // Get token from cookies
+  if (!token)
+    return res.status(401).json({ error: "Unauthorized, token not found" });
 
-  const reqShop = req.query.shop;
   try {
-    const shop = await Shop.findOne({ shop: reqShop });
-    if (!shop) {
-      return res.status(401).send("Unauthorized, shop not provided");
-    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.session = {
-      shop: shop.shop,
-      accessToken: shop.accessToken,
+      shop: decoded.shop,
+      accessToken: decoded.accessToken,
     };
     next();
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: err.message, message: "Failed to authenticate shop" });
+  } catch (error) {
+    res.status(403).json({ error: "Invalid or expired token" });
   }
 };

@@ -9,6 +9,7 @@ const ShopSchema = new mongoose.Schema({
   installedAt: { type: Date, default: Date.now },
 });
 
+
 const Shop = mongoose.model("Shop", ShopSchema);
 
 export default Shop;
