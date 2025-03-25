@@ -3,6 +3,7 @@ import Shop from "../models/Shop.js";
 import crypto from "crypto";
 import axios from "axios";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 export const shopifyAuth = async (req, res) => {
   const shop = req.query.shop;
@@ -20,8 +21,8 @@ export const shopifyAuth = async (req, res) => {
 export const shopifyAuthCallback = async (req, res) => {
   const { shop, hmac, code, state } = req.query;
 
-  // Validate request is from Shopify
-  const map = Object.assign({}, req.query);
+  // Validate HMAC
+  const map = { ...req.query };
   delete map["hmac"];
   const message = Object.keys(map)
     .sort()
@@ -39,7 +40,9 @@ export const shopifyAuthCallback = async (req, res) => {
   if (!crypto.timingSafeEqual(generatedHmac, providedHmac)) {
     return res.status(400).send("HMAC validation failed");
   }
-  console.log("every thing ok");
+
+  console.log("Everything is OK");
+
   // Exchange temporary code for a permanent access token
   const accessTokenRequestUrl = `https://${shop}/admin/oauth/access_token`;
   const accessTokenPayload = {
@@ -53,17 +56,30 @@ export const shopifyAuthCallback = async (req, res) => {
       accessTokenRequestUrl,
       accessTokenPayload,
       {
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       }
     );
 
     const accessToken = response.data.access_token;
-    // Store the access token in your session storage
+
+    // Store access token in session or DB
     await storeSession(shop, accessToken);
 
-    res.redirect(`http://localhost:5173/login?shop=${shop}`);
+    // 🔹 Generate a JWT token
+    const token = jwt.sign({ shop, accessToken }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
+    // 🔹 Set the token in an HTTP-only cookie (Most Secure)
+    res.cookie("authToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day expiration
+    });
+
+    // Redirect to frontend (No token in URL for security reasons)
+    res.redirect(`http://localhost:5173?shop=${shop}`);
   } catch (error) {
     res.status(500).send(`Error: ${error.message}`);
   }
