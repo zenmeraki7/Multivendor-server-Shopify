@@ -22,7 +22,11 @@ export const createProduct = async (req, res) => {
     console.log("first");
     const { variants, ...others } = req.body;
     // Create new product (status 'pending' as it's awaiting approval)
-    const newProduct = new Product({ ...others, vendor: req.vendor._id });
+    const newProduct = new Product({
+      ...others,
+      vendor: req.vendor._id,
+      merchantShop: req.vendor.merchantShop,
+    });
 
     await newProduct.save();
     console.log(variants[0].variantTypes);
@@ -267,7 +271,7 @@ export const getAllActiveProducts = async (req, res) => {
 // Get all products (for admin to view all)
 export const getAllProducts = async (req, res) => {
   try {
-    const query = {};
+    const query = { merchantShop: req.session?.shop };
     const {
       inStock,
       isActive,
@@ -368,7 +372,7 @@ export const getAllProducts = async (req, res) => {
 // Get all seller products (for seller to view all)
 export const getAllSellerProducts = async (req, res) => {
   try {
-    const query = { seller: req.vendor._id }; // Base query for the seller
+    const query = { vendor: req.vendor._id }; // Base query for the seller
 
     const {
       inStock,
@@ -409,13 +413,8 @@ export const getAllSellerProducts = async (req, res) => {
 
     // Fetch filtered products
     const products = await Product.find(query)
-      .select(
-        "_id title thumbnail discountedPrice brand categoryType seller stock isApproved createdAt"
-      )
-      .populate("seller", "companyName companyIcon")
-      .populate("categoryType", "name")
-      .populate("category", "name")
-      .populate("subcategory", "name")
+      .populate("vendor", "companyName companyIcon")
+      .populate("images")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
