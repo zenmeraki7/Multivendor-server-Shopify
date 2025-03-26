@@ -10,13 +10,7 @@ export const getCollections = async (req, res) => {
     //   });
 
     // const session = { shop: shop.shop, accessToken: shop.accessToken };
-    const client = new shopify.clients.Graphql({
-      session: {
-        shop: "demo-zen-store.myshopify.com",
-        accessToken: "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",
-        scope:'read_product_listings'
-      },
-    });
+   
     const data = await client.query({
       data: `query CustomCollectionList {
           collections(first: 50, query: "collection_type:custom") {
