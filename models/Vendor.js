@@ -40,6 +40,10 @@ const vendorSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    merchantShop: {
+      type: String,
+      required: true,
+    },
     password: {
       type: String,
       required: true,
@@ -83,17 +87,17 @@ const vendorSchema = new mongoose.Schema(
     website: {
       type: String,
     },
-    storeDescription:{
+    storeDescription: {
       type: String,
     },
-    sellerDescription:{
+    sellerDescription: {
       type: String,
     },
-    sellerPolicy:{
+    sellerPolicy: {
       type: String,
     },
-    businessType:{
-     type: mongoose.Schema.Types.ObjectId,
+    businessType: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: "BusinessType",
       required: true,
     },

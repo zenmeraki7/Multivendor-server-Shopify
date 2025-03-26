@@ -23,16 +23,15 @@ const app = express();
 app.use(express.json());
 // Specify the frontend URL in the CORS configuration
 const corsOptions = {
-  origin: "http://localhost:5173", // Update this to match your frontend URL
+  origin: ["http://localhost:5173", "http://localhost:5174"], // Update this to match your frontend URL
   credentials: true, // 👈 Allows cookies & authentication headers
 };
 
 app.use(cors(corsOptions));
 
 // Log all API calls
-app.use(logMiddleware);
+// app.use(logMiddleware);
 app.use(cookieParser()); // 👈 Required to read cookies
-
 
 app.use("/", shopifyRoutes);
 app.use("/api/vendor", vendorRoutes);

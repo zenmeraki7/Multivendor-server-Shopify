@@ -5,6 +5,9 @@ export const vendorRegistrationSchema = Joi.object({
   fullName: Joi.string().trim().required().messages({
     "string.empty": "Full name is required.",
   }),
+  merchantShop: Joi.string().trim().required().messages({
+    "string.empty": "Merchant shop is required.",
+  }),
   email: Joi.string().email().required().messages({
     "string.email": "Please provide a valid email address.",
     "any.required": "Email is required.",

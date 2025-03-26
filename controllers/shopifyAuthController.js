@@ -14,8 +14,8 @@ export const shopifyAuth = async (req, res) => {
   const state = crypto.randomBytes(16).toString("hex");
   const redirectUri = `http://localhost:5000/auth/callback`;
   const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${process.env.SHOPIFY_API_KEY}&scope=read_products,write_products&state=${state}&redirect_uri=${redirectUri}`;
-
-  res.redirect(installUrl);
+  
+  return res.redirect(installUrl);
 };
 
 export const shopifyAuthCallback = async (req, res) => {
@@ -65,7 +65,7 @@ export const shopifyAuthCallback = async (req, res) => {
     // Store access token in session or DB
     await storeSession(shop, accessToken);
 
-    res.redirect(`http://localhost:5173/login?shop=${shop}`);
+   
     // 🔹 Generate a JWT token
     const token = jwt.sign({ shop, accessToken }, process.env.JWT_SECRET, {
       expiresIn: "1d",
@@ -102,6 +102,18 @@ export const isShopLoginedAuthentication = async (req, res) => {
     res.status(403).json({ error: "Invalid or expired token" });
   }
 };
+
+export const logoutAdmin = async (req, res) => {
+  res.cookie("authToken", "", {
+    httpOnly: true,
+    secure: false, // Set to `true` in production (HTTPS)
+    sameSite: "Lax",
+    expires: new Date(0), // Expire the cookie immediately
+  });
+
+  res.status(200).json({ message: "Logged out successfully" });
+};
+
 export const adminCreateAccount = async (req, res) => {
   const { email, password, shop } = req.body;
   try {
