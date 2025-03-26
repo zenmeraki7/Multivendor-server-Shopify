@@ -30,7 +30,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Log all API calls
-app.use(logMiddleware);
+// app.use(logMiddleware);
 app.use(cookieParser()); // 👈 Required to read cookies
 
 app.use("/", shopifyRoutes);

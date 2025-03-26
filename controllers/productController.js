@@ -271,10 +271,9 @@ export const getAllActiveProducts = async (req, res) => {
 // Get all products (for admin to view all)
 export const getAllProducts = async (req, res) => {
   try {
-    const query = { merchantShop: req.session?.shop };
+    const query = { merchantShop: req.session?.shop, isApproved: false };
     const {
       inStock,
-      isActive,
       category,
       subcategory,
       categoryType,
@@ -287,16 +286,12 @@ export const getAllProducts = async (req, res) => {
     if (inStock === "true") query.stock = { $gt: 0 };
     if (inStock === "false") query.stock = 0;
 
-    // ✅ Handle price range filtering like total sales in vendors
+    // ✅ Handle price range filtering
     if (minPrice || maxPrice) {
-      query.discountedPrice = {}; // Initialize filter object
-      if (minPrice) query.discountedPrice.$gte = parseFloat(minPrice); // Minimum price
-      if (maxPrice) query.discountedPrice.$lte = parseFloat(maxPrice); // Maximum price
+      query.discountedPrice = {};
+      if (minPrice) query.discountedPrice.$gte = parseFloat(minPrice);
+      if (maxPrice) query.discountedPrice.$lte = parseFloat(maxPrice);
     }
-
-    // Handle approval status
-    if (isActive === "true") query.isApproved = true;
-    if (isActive === "false") query.isApproved = false;
 
     // Handle ObjectId validation for category fields
     if (category && category !== "all" && /^[0-9a-fA-F]{24}$/.test(category)) {
@@ -352,7 +347,7 @@ export const getAllProducts = async (req, res) => {
     const totalProducts = await Product.countDocuments(query);
 
     res.status(200).json({
-      message: "Products fetched successfully",
+      message: "Pending products fetched successfully",
       data:
         filteredProducts.length < products.length ? filteredProducts : products,
       success: true,
@@ -362,17 +357,17 @@ export const getAllProducts = async (req, res) => {
       itemsPerPage: limit,
     });
   } catch (err) {
-    console.error("Error in getAllProducts:", err);
+    console.error("Error in getPendingProducts:", err);
     res
       .status(500)
-      .json({ message: "Error fetching products", error: err.message });
+      .json({ message: "Error fetching pending products", error: err.message });
   }
 };
 
 // Get all seller products (for seller to view all)
 export const getAllSellerProducts = async (req, res) => {
   try {
-    const query = { vendor: req.vendor._id }; // Base query for the seller
+    const query = { vendor: req.vendor._id, isApproved: false }; // Base query for the seller
 
     const {
       inStock,

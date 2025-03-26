@@ -138,7 +138,8 @@ export const createVendor = async (req, res) => {
 
     // ✅ Check if vendor with email or phone already exists
     const existingVendor = await Vendor.findOne({
-      $or: [{ email }, { phoneNum }],
+      email,
+      merchantShop: value.merchantShop,
     });
     if (existingVendor) {
       return res.status(400).json({
@@ -445,17 +446,20 @@ export const updateBankDetails = async (req, res) => {
 
 export const loginVendor = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, shop } = req.body;
 
     // Validate Input
-    if (!email || !password) {
+    if (!email || !password || !shop) {
       return res
         .status(400)
-        .json({ message: "Email and password are required." });
+        .json({ message: "Email, shop and password are required." });
     }
 
     // Find Vendor by Email
-    const vendor = await Vendor.findOne({ email })
+    const vendor = await Vendor.findOne({
+      email,
+      merchantShop: `${shop}.myshopify.com`,
+    })
       .populate("country", "name") // Populate 'country' field
       .populate("state", "name") // Populate 'state' field
       .populate({
@@ -465,7 +469,7 @@ export const loginVendor = async (req, res) => {
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found." });
     }
-
+    console.log(vendor);
     // // Check if Vendor is Approved
     // if (!vendor.isVerified) {
     //   return res
