@@ -34,19 +34,13 @@ const router = express.Router();
 router.get("/for-customers", getAllActiveProducts);
 
 // Admin views all products
-router.get("/allproduct", authenticateAdmin, getAllProducts);
+router.get("/allproduct", authenticateShop, getAllProducts);
 
 // Seller views all products
 router.get("/all-seller-product", authenticateVendor, getAllSellerProducts);
 
 // Vendor routes
-router.post(
-  "/create",
-  // authenticateVendor,
-  // checkVendorBlocked,
-  // validateProductCreation,
-  createProduct
-);
+router.post("/create", authenticateVendor, createProduct);
 
 // Vendor routes for update product
 router.post(
@@ -59,7 +53,7 @@ router.post(
   updateProduct
 );
 
-router.get("/get-one/:productId", authentication, getProductById); // View product details
+router.get("/get-one/:productId", getProductById); // View product details
 
 // Admin routes
 router.put("/status", authenticateAdmin, updateProductStatus); // Admin approves/rejects products
