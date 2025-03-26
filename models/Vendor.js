@@ -37,7 +37,6 @@ const vendorSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
     merchantShop: {
@@ -51,7 +50,6 @@ const vendorSchema = new mongoose.Schema(
     phoneNum: {
       type: String,
       required: true,
-      unique: true,
     },
     address: {
       type: String,

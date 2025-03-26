@@ -14,7 +14,7 @@ export const shopifyAuth = async (req, res) => {
   const state = crypto.randomBytes(16).toString("hex");
   const redirectUri = `http://localhost:5000/auth/callback`;
   const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${process.env.SHOPIFY_API_KEY}&scope=read_products,write_products&state=${state}&redirect_uri=${redirectUri}`;
-  
+
   return res.redirect(installUrl);
 };
 
@@ -65,7 +65,6 @@ export const shopifyAuthCallback = async (req, res) => {
     // Store access token in session or DB
     await storeSession(shop, accessToken);
 
-   
     // 🔹 Generate a JWT token
     const token = jwt.sign({ shop, accessToken }, process.env.JWT_SECRET, {
       expiresIn: "1d",
@@ -83,6 +82,28 @@ export const shopifyAuthCallback = async (req, res) => {
     res.redirect(`http://localhost:5173?shop=${shop}`);
   } catch (error) {
     res.status(500).send(`Error: ${error.message}`);
+  }
+};
+
+export const isShopExistCheckForVendor = async (req, res) => {
+  if (!req.body.shop)
+    return res.status(404).json({ message: "Shop not found!", success: false });
+
+  try {
+    const existShop = await Shop.findOne({
+      shop: `${req.body.shop}.myshopify.com`,
+    });
+
+    if (!existShop)
+      return res
+        .status(404)
+        .json({ message: "Shop not found!", success: false });
+
+    return res
+      .status(201)
+      .json({ message: "Shop found", shop: existShop.shop, success: true });
+  } catch (error) {
+    res.status(403).json({ error: "Invalid or expired token" });
   }
 };
 
@@ -112,24 +133,6 @@ export const logoutAdmin = async (req, res) => {
   });
 
   res.status(200).json({ message: "Logged out successfully" });
-};
-
-export const adminCreateAccount = async (req, res) => {
-  const { email, password, shop } = req.body;
-  try {
-    const existShop = await Shop.findOne({ shop });
-    if (!existShop)
-      return res
-        .status(404)
-        .json({ message: "Shop not found! please install the app" });
-
-    // ✅ Hash password before saving
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    res.redirect(`http://localhost:5173/login?shop=${shop}`);
-  } catch (error) {
-    res.status(500).send(`Error: ${error.message}`);
-  }
 };
 
 async function storeSession(shop, accessToken) {

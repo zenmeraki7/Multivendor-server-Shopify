@@ -36,6 +36,8 @@ import {
   authentication,
 } from "../middlewares/jwtMiddleware.js";
 import { authenticateShop } from "../middlewares/shopifyMiddleware.js";
+import { isShopExistCheckForVendor } from "../controllers/shopifyAuthController.js";
+import { getCollections } from "../controllers/collectionController.js";
 
 const router = express.Router();
 
@@ -52,6 +54,9 @@ router.post(
 router.post("/verify-vendor", verifyVendor);
 
 //Verify Vendor account
+router.post("/authenticate-shop", isShopExistCheckForVendor);
+
+//Verify Vendor account
 router.post("/create-vendor-by-admin", authenticateAdmin, addSellerByAdmin);
 
 // Vendor login
@@ -59,6 +64,9 @@ router.post("/login", loginVendor);
 
 // Admin views all vendors
 router.get("/all", authenticateShop, getAllVendors);
+
+// Admin views all vendors
+router.get("/all-product-collections", getCollections);
 
 // Admin views a single vendor
 router.get("/get-one/:id", authenticateShop, getVendorById);

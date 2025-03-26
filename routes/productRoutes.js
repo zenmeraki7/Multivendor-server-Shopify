@@ -34,7 +34,6 @@ const router = express.Router();
 router.get("/for-customers", getAllActiveProducts);
 
 // Admin views all products
-router.get("/allproduct", getAllProducts);
 router.get("/allproduct", authenticateShop, getAllProducts);
 
 // Seller views all products

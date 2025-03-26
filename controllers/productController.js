@@ -271,8 +271,7 @@ export const getAllActiveProducts = async (req, res) => {
 // Get all products (for admin to view all)
 export const getAllProducts = async (req, res) => {
   try {
- 
-    const query = { merchantShop: req.session?.shop,isApproved: false };
+    const query = { merchantShop: req.session?.shop, isApproved: false };
     const {
       inStock,
       category,
@@ -298,10 +297,18 @@ export const getAllProducts = async (req, res) => {
     if (category && category !== "all" && /^[0-9a-fA-F]{24}$/.test(category)) {
       query.category = category;
     }
-    if (subcategory && subcategory !== "all" && /^[0-9a-fA-F]{24}$/.test(subcategory)) {
+    if (
+      subcategory &&
+      subcategory !== "all" &&
+      /^[0-9a-fA-F]{24}$/.test(subcategory)
+    ) {
       query.subcategory = subcategory;
     }
-    if (categoryType && categoryType !== "all" && /^[0-9a-fA-F]{24}$/.test(categoryType)) {
+    if (
+      categoryType &&
+      categoryType !== "all" &&
+      /^[0-9a-fA-F]{24}$/.test(categoryType)
+    ) {
       query.categoryType = categoryType;
     }
 
@@ -330,7 +337,8 @@ export const getAllProducts = async (req, res) => {
       const regexSearch = new RegExp(search, "i");
       filteredProducts = products.filter(
         (product) =>
-          (product.categoryType && regexSearch.test(product.categoryType.name)) ||
+          (product.categoryType &&
+            regexSearch.test(product.categoryType.name)) ||
           (product.category && regexSearch.test(product.category.name)) ||
           (product.subcategory && regexSearch.test(product.subcategory.name))
       );
@@ -356,12 +364,10 @@ export const getAllProducts = async (req, res) => {
   }
 };
 
-
-
 // Get all seller products (for seller to view all)
 export const getAllSellerProducts = async (req, res) => {
   try {
-    const query = { vendor: req.vendor._id }; // Base query for the seller
+    const query = { vendor: req.vendor._id, isApproved: false }; // Base query for the seller
 
     const {
       inStock,
