@@ -11,11 +11,11 @@ import {
   getAllActiveProducts,
   getAllSellerProducts,
   updateProduct,
+  fetchProducts,
 } from "../controllers/productController.js";
 import {
   authenticateAdmin,
   authenticateVendor,
-  authentication,
 } from "../middlewares/jwtMiddleware.js";
 import {
   handleImageUpload,
@@ -34,7 +34,10 @@ const router = express.Router();
 router.get("/for-customers", getAllActiveProducts);
 
 // Admin views all products
-router.get("/allproduct", authenticateShop, getAllProducts);
+router.get("/all-pending-products", authenticateShop, getAllProducts);
+
+// Admin views all products
+router.get("/all-approved-products", authenticateShop, fetchProducts);
 
 // Seller views all products
 router.get("/all-seller-product", authenticateVendor, getAllSellerProducts);

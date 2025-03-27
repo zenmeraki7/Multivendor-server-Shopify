@@ -6,6 +6,7 @@ import shopify from "../config/shopify.js";
 import {
   CREATE_PRODUCT_QUERY,
   CREATE_VARIANT_QUERY,
+  FETCH_PRODUCTS_QUERY,
   UPDATE_VARIANT_QUERY,
 } from "../services/graphql.js";
 import Variants from "../models/Variants.js";
@@ -268,7 +269,7 @@ export const getAllActiveProducts = async (req, res) => {
       .json({ message: "Error fetching products", error: err.message });
   }
 };
-// Get all products (for admin to view all)
+// Get all pending products (for admin to view all)
 export const getAllProducts = async (req, res) => {
   try {
     const query = { merchantShop: req.session?.shop, isApproved: false };
@@ -361,6 +362,25 @@ export const getAllProducts = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error fetching pending products", error: err.message });
+  }
+};
+
+// Get all approved products (for admin to view all)
+export const fetchProducts = async (req, res) => {
+  try {
+    const client = new shopify.clients.Graphql({
+      session: req.session,
+    });
+console.log("first")
+    const response = await client.query({
+      data: {
+        query: FETCH_PRODUCTS_QUERY,
+      },
+    });
+    console.log(response);
+    res.status(200).json({ data: response.body.data });
+  } catch (err) {
+    res.status(400).json({ message: "failed to fetch", error: err.message });
   }
 };
 
