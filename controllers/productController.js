@@ -371,7 +371,7 @@ export const fetchProducts = async (req, res) => {
     const client = new shopify.clients.Graphql({
       session: req.session,
     });
-console.log("first")
+    console.log("first");
     const response = await client.query({
       data: {
         query: FETCH_PRODUCTS_QUERY,
@@ -592,7 +592,9 @@ export const approveProduct = async (req, res) => {
     const { id } = req.params;
     const { verificationRemarks } = req.body;
 
-    const product = await Product.findById(id).populate("images");
+    const product = await Product.findById(id)
+      .populate("images")
+      .populate("vendor", "companyName _id");
 
     const variants = await Variants.find({ productId: id });
 
@@ -610,10 +612,18 @@ export const approveProduct = async (req, res) => {
           product: {
             title: product.title,
             descriptionHtml: product.description,
-            // vendor: "Helmet",
+            vendor: product.vendor?._id,
             productType: product.productType,
             tags: product.tags,
             seo: product.seo,
+            metafields: [
+              {
+                namespace: "vendor_info",
+                key: "vendor_name",
+                type: "single_line_text_field",
+                value: product.vendor?.companyName,
+              }
+            ],
             productOptions: product.productOptions.map((item) => {
               return {
                 name: item.name,
