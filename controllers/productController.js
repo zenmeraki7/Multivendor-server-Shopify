@@ -29,20 +29,22 @@ export const createProduct = async (req, res) => {
       merchantShop: req.vendor.merchantShop,
     });
 
-    await newProduct.save();
-    console.log(variants[0].variantTypes);
-    variants?.map(async (item, index) => {
-      try {
-        const newVariants = await Variants.create({
+    let addVariants = [];
+
+    addVariants = await Promise.all(
+      variants.map(async (item) => {
+        const newVariant = await Variants.create({
           ...item,
           productId: newProduct._id,
           compareAtPrice: newProduct.compareAtPrice,
         });
-      } catch (err) {
-        console.log(err);
-        return res.status(400).json({ error: err });
-      }
-    });
+        console.log(newVariant?._id);
+        return newVariant._id; // Return the new variant ID
+      })
+    );
+    console.log(addVariants);
+    newProduct.variants = addVariants;
+    await newProduct.save();
 
     // await Notification.create({
     //   title: "New Product Request",
@@ -469,7 +471,8 @@ export const getProductById = async (req, res) => {
     } else {
       product = await Product.findById(productId)
         .populate("vendor", "companyName email")
-        .populate("images");
+        .populate("images")
+        .populate("variants");
     }
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -622,7 +625,7 @@ export const approveProduct = async (req, res) => {
                 key: "vendor_name",
                 type: "single_line_text_field",
                 value: product.vendor?.companyName,
-              }
+              },
             ],
             productOptions: product.productOptions.map((item) => {
               return {
