@@ -330,7 +330,12 @@ export const getAllProducts = async (req, res) => {
     const products = await Product.find(query)
       .populate("vendor")
       .populate("images")
-      .populate("variants")
+      .populate({
+        path: "variants",
+        populate: {
+          path: "image", // This populates the "image" field inside "variants"
+        },
+      })
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
