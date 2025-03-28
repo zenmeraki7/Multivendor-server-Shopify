@@ -37,7 +37,7 @@ import {
 } from "../middlewares/jwtMiddleware.js";
 import { authenticateShop } from "../middlewares/shopifyMiddleware.js";
 import { isShopExistCheckForVendor } from "../controllers/shopifyAuthController.js";
-import { getCollections } from "../controllers/collectionController.js";
+import { getApprovedProductOfVendorById } from "../controllers/productController.js";
 
 const router = express.Router();
 
@@ -66,10 +66,16 @@ router.post("/login", loginVendor);
 router.get("/all", authenticateShop, getAllVendors);
 
 // Admin views all vendors
-router.get("/all-product-collections", getCollections);
 
 // Admin views a single vendor
 router.get("/get-one/:id", authenticateShop, getVendorById);
+
+// get one product of seller by id
+router.get(
+  "/get-one-product/:productId",
+  authenticateVendor,
+  getApprovedProductOfVendorById
+);
 
 //views a single vendor by token
 router.get("/auth-token", authentication, getLoginedVendor);

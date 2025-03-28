@@ -23,6 +23,9 @@ export const CREATE_PRODUCT_QUERY = `
                   name
                   value
                 }
+                inventoryItem {
+                  id
+                }
               } 
             }
           }
@@ -201,6 +204,13 @@ export const FETCH_PRODUCTS_QUERY = `
                 createdAt
                 compareAtPrice
                 inventoryQuantity
+                inventoryItem {
+                  tracked
+                  trackedEditable {
+                    locked
+                    reason
+                  }
+                }
                 sku
                 barcode
                 displayName
@@ -287,6 +297,9 @@ export const FETCH_PRODUCT_BY_ID = `
                 createdAt
                 compareAtPrice
                 inventoryQuantity
+                inventoryItem {
+                  id
+                }
                 sku
                 barcode
                 displayName
@@ -299,3 +312,24 @@ export const FETCH_PRODUCT_BY_ID = `
         }
       }
 `;
+
+// GraphQL mutation for creating a product in Shopify query: "metafield:vendor_info.vendor_id:67e29bddb3b240be6cddb7b8"
+export const UPDATE_INVENTORY_QUANTITY = `
+    mutation inventoryAdjustQuantities($input: InventoryAdjustQuantitiesInput!) {
+      inventoryAdjustQuantities(input: $input) {
+        userErrors {
+          field
+          message
+        }
+        inventoryAdjustmentGroup {
+          createdAt
+          reason
+          referenceDocumentUri
+          changes {
+            name
+            delta
+          }
+        }
+      }
+    }
+  `;

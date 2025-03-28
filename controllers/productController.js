@@ -8,6 +8,7 @@ import {
   CREATE_VARIANT_QUERY,
   FETCH_PRODUCT_BY_ID,
   FETCH_PRODUCTS_QUERY,
+  UPDATE_INVENTORY_QUANTITY,
   UPDATE_VARIANT_QUERY,
 } from "../services/graphql.js";
 import Variants from "../models/Variants.js";
@@ -573,6 +574,45 @@ export const getApprovedProductById = async (req, res) => {
   }
 };
 
+// Get a specific product by ID (for vendor and admin)
+export const getApprovedProductOfVendorById = async (req, res) => {
+  const { productId } = req.params;
+  try {
+    const shop = req.vendor?.merchantShop;
+    const vendorShop = await Shop.findOne({ shop });
+
+    if (!vendorShop)
+      return res
+        .status(404)
+        .json({ message: "vendor shop not found", error: err.message });
+
+    const vendor_id = req.vendor?._id;
+
+    const client = new shopify.clients.Graphql({
+      session: { shop, accessToken: vendorShop.accessToken },
+    });
+
+    const variables = {
+      id: `gid://shopify/Product/${productId}`,
+    };
+
+    const response = await client.query({
+      data: {
+        query: FETCH_PRODUCT_BY_ID,
+        variables, // Pass variables here
+      },
+    });
+    console.log(response);
+    let responseData = null;
+    if (response.body.data.product.vendor == vendor_id) {
+      responseData = response.body.data.product;
+    }
+    res.status(200).json({ data: responseData });
+  } catch (err) {
+    res.status(400).json({ message: "failed to fetch", error: err.message });
+  }
+};
+
 export const addVariant = async (req, res) => {
   const { productId } = req.params;
   const { attribute, value, additionalPrice, stock } = req.body;
@@ -720,7 +760,6 @@ export const approveProduct = async (req, res) => {
                 }),
               };
             }),
-            // handle: "helmet-nova",
           },
           media: product.images?.map((item) => {
             return {
@@ -749,6 +788,36 @@ export const approveProduct = async (req, res) => {
       (item) => item.variant != existingShopifyVariant?.title
     );
 
+    const inventoryQuantityResponse = await client.query({
+      data: {
+        query: UPDATE_INVENTORY_QUANTITY,
+        variables: {
+          input: {
+            reason: "correction",
+            name: "available",
+            changes: [
+              {
+                delta: +existingVariant.quantity,
+                inventoryItemId: existingShopifyVariant?.inventoryItem?.id,
+                locationId: "gid://shopify/Location/98387394807",
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    const inventoryResponseData =
+    inventoryQuantityResponse.body.data;
+    const userErrors = inventoryResponseData?.userErrors;
+    console.log(inventoryResponseData);
+    // Check for errors and handle them
+    if (userErrors && userErrors.length > 0) {
+      return res
+        .status(400)
+        .json({ error: userErrors, message: "variant update error" });
+    }
+
     const variantUpdateResponse = await client.query({
       data: {
         query: UPDATE_VARIANT_QUERY,
@@ -762,6 +831,7 @@ export const approveProduct = async (req, res) => {
               price: existingVariant.price.toString() || "",
               inventoryItem: {
                 sku: existingVariant.sku || "",
+                tracked:true
               },
             },
           ],
@@ -858,7 +928,7 @@ export const approveProduct = async (req, res) => {
     //   "Product approved",
     //   `Dear ${product.seller.fullName},\n\nYour product "${product.title}" has been approved by the admin.`
     // );
-
+console.log("inv",inventoryQuantityResponse.body.data.inventoryAdjustQuantities.inventoryAdjustmentGroup.changes);
     res.status(200).json({
       message: "Product approved successfully",
       product: response.body.data.productCreate.product,
