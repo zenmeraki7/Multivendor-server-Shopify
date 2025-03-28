@@ -478,7 +478,12 @@ export const getProductById = async (req, res) => {
       product = await Product.findById(productId)
         .populate("vendor", "companyName email")
         .populate("images")
-        .populate("variants");
+        .populate({
+          path: "variants",
+          populate: {
+            path: "image", // This populates the "image" field inside "variants"
+          },
+        });
     }
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
