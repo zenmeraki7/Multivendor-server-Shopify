@@ -129,8 +129,9 @@ export const CREATE_PRODUCT_OPTION_QUERY = `mutation createOptions($productId: I
     }`;
 
 // GraphQL mutation for creating a product in Shopify query: "metafield:vendor_info.vendor_id:67e29bddb3b240be6cddb7b8"
-export const FETCH_PRODUCTS_QUERY = `{
-    products(first: 50, query:"metafield:something") {
+export const FETCH_PRODUCTS_QUERY = `
+  query FetchProducts($first: Int!, $query: String!, $variantsLimit: Int!, $mediaLimit: Int!) {
+    products(first: $first, query: $query) {
       edges {
         node {
           id
@@ -160,13 +161,13 @@ export const FETCH_PRODUCTS_QUERY = `{
               }
             }
           }
-          metafield(namespace: "vendor_info",key:"vendor_name") {
+          metafield(namespace: "vendor_info", key: "vendor_name") {
             namespace
             key
             value
           }
           handle
-          media(first:10) {
+          media(first: $mediaLimit) {
             edges {
               node {
                 preview {
@@ -191,7 +192,7 @@ export const FETCH_PRODUCTS_QUERY = `{
           vendor
           status
           description
-          variants(first:10) {
+          variants(first: $variantsLimit) {
             edges {
               node {
                 id
@@ -212,4 +213,5 @@ export const FETCH_PRODUCTS_QUERY = `{
         }
       }
     }
-  }`;
+  }
+`;

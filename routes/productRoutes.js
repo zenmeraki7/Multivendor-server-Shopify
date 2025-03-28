@@ -12,6 +12,7 @@ import {
   getAllSellerProducts,
   updateProduct,
   fetchProducts,
+  getAllSellerApprovedProducts,
 } from "../controllers/productController.js";
 import {
   authenticateAdmin,
@@ -39,8 +40,19 @@ router.get("/all-pending-products", authenticateShop, getAllProducts);
 // Admin views all products
 router.get("/all-approved-products", authenticateShop, fetchProducts);
 
+// Seller views all pending products
+router.get(
+  "/all-seller-pending-products",
+  authenticateVendor,
+  getAllSellerProducts
+);
+
 // Seller views all products
-router.get("/all-seller-product", authenticateVendor, getAllSellerProducts);
+router.get(
+  "/all-seller-approved-products",
+  authenticateVendor,
+  getAllSellerApprovedProducts
+);
 
 // Vendor routes
 router.post("/create", authenticateVendor, createProduct);

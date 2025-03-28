@@ -10,6 +10,7 @@ import {
   UPDATE_VARIANT_QUERY,
 } from "../services/graphql.js";
 import Variants from "../models/Variants.js";
+import Shop from "../models/Shop.js";
 
 // Joi schema for product approval/rejection validation
 const productApprovalSchema = Joi.object({
@@ -380,9 +381,17 @@ export const fetchProducts = async (req, res) => {
       session: req.session,
     });
     console.log("first");
+    const variables = {
+      first: 50, // Number of products to fetch
+      query: "", // Custom query filter
+      variantsLimit: 10, // Limit number of variants per product
+      mediaLimit: 10, // Limit number of media items per product
+    };
+
     const response = await client.query({
       data: {
         query: FETCH_PRODUCTS_QUERY,
+        variables, // Pass variables here
       },
     });
     console.log(response);
@@ -458,6 +467,43 @@ export const getAllSellerProducts = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error fetching products", error: err.message });
+  }
+};
+
+// Get all seller approved products (for seller to view all)
+export const getAllSellerApprovedProducts = async (req, res) => {
+  try {
+    const shop = req.vendor?.merchantShop;
+    const vendorShop = await Shop.findOne({ shop });
+
+    if (!vendorShop)
+      return res
+        .status(404)
+        .json({ message: "vendor shop not found", error: err.message });
+
+    const vendor_id = req.vendor?._id;
+
+    const client = new shopify.clients.Graphql({
+      session: { shop, accessToken: vendorShop.accessToken },
+    });
+
+    const variables = {
+      first: 50, // Number of products to fetch
+      query: `vendor:${vendor_id}`, // Custom query filter
+      variantsLimit: 10, // Limit number of variants per product
+      mediaLimit: 10, // Limit number of media items per product
+    };
+
+    const response = await client.query({
+      data: {
+        query: FETCH_PRODUCTS_QUERY,
+        variables, // Pass variables here
+      },
+    });
+    console.log(response);
+    res.status(200).json({ data: response.body.data });
+  } catch (err) {
+    res.status(400).json({ message: "failed to fetch", error: err.message });
   }
 };
 
