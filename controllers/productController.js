@@ -6,6 +6,7 @@ import shopify from "../config/shopify.js";
 import {
   CREATE_PRODUCT_QUERY,
   CREATE_VARIANT_QUERY,
+  FETCH_PRODUCT_BY_ID,
   FETCH_PRODUCTS_QUERY,
   UPDATE_VARIANT_QUERY,
 } from "../services/graphql.js";
@@ -544,6 +545,31 @@ export const getProductById = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error fetching product", error: err.message });
+  }
+};
+
+// Get a specific product by ID (for vendor and admin)
+export const getApprovedProductById = async (req, res) => {
+  const { productId } = req.params;
+  try {
+    const client = new shopify.clients.Graphql({
+      session: req.session,
+    });
+
+    const variables = {
+      id: `gid://shopify/Product/${productId}`,
+    };
+
+    const response = await client.query({
+      data: {
+        query: FETCH_PRODUCT_BY_ID,
+        variables, // Pass variables here
+      },
+    });
+    console.log(response);
+    res.status(200).json({ data: response.body.data.product });
+  } catch (err) {
+    res.status(400).json({ message: "failed to fetch", error: err.message });
   }
 };
 

@@ -215,3 +215,87 @@ export const FETCH_PRODUCTS_QUERY = `
     }
   }
 `;
+
+// GraphQL mutation for creating a product in Shopify query: "metafield:vendor_info.vendor_id:67e29bddb3b240be6cddb7b8"
+export const FETCH_PRODUCT_BY_ID = `
+  query FetchProducts($id: ID!) {
+    product(id: $id) {
+          id
+          title
+          descriptionHtml
+          category { 
+            fullName
+            name
+          }
+          compareAtPriceRange {
+            maxVariantCompareAtPrice {
+              amount 
+              currencyCode
+            }
+            minVariantCompareAtPrice {
+              amount 
+              currencyCode
+            }
+          }
+          createdAt
+          featuredMedia {
+            alt
+            preview {
+              image {
+               url
+               altText
+              }
+            }
+          }
+          metafield(namespace: "vendor_info", key: "vendor_name") {
+            namespace
+            key
+            value
+          }
+          handle
+          media(first: 10) {
+            edges {
+              node {
+                preview {
+                  image {
+                  url
+                  altText
+                  }
+                }
+              }
+            }
+          }
+          productType
+          seo {
+            description
+            title
+          }
+          tags
+          totalInventory
+          variantsCount {
+            count
+          }
+          vendor
+          status
+          description
+          variants(first: 10) {
+            edges {
+              node {
+                id
+                title
+                price
+                createdAt
+                compareAtPrice
+                inventoryQuantity
+                sku
+                barcode
+                displayName
+                image { 
+                  url
+                }
+              }
+            }
+          }
+        }
+      }
+`;

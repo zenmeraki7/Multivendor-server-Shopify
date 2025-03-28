@@ -13,6 +13,7 @@ import {
   updateProduct,
   fetchProducts,
   getAllSellerApprovedProducts,
+  getApprovedProductById,
 } from "../controllers/productController.js";
 import {
   authenticateAdmin,
@@ -68,12 +69,17 @@ router.post(
   updateProduct
 );
 
-router.get("/get-one/:productId", getProductById); // View product details
+router.get("/get-one-pending-product/:productId", getProductById); // View pending product details
+router.get(
+  "/get-one-approved-product/:productId",
+  authenticateShop,
+  getApprovedProductById
+); // View approved product details
 
 // Admin routes
 router.put("/status", authenticateAdmin, updateProductStatus); // Admin approves/rejects products
 router.put("/approve/:id", authenticateShop, approveProduct); // Admin approves/rejects products
-router.put("/reject/:id", authenticateAdmin, rejectProduct); // Admin approves/rejects products
+router.put("/reject/:id", authenticateShop, rejectProduct); // Admin approves/rejects products
 
 router.post(
   "/product-variant/:productId",
