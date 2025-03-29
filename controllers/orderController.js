@@ -96,7 +96,7 @@ export const fetchAllOrders = async (req, res) => {
 
     console.log("Response:", response.body);
 
-    res.status(200).json({ success: true, data: response.body });
+    res.status(200).json({ success: true, data: response.body.data.orders });
   } catch (error) {
     console.error("Fetch Orders Error:", error);
     res.status(500).json({ success: false, message: "Failed to fetch orders", error: error });
