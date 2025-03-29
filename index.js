@@ -8,7 +8,7 @@ import reviewRoutes from "./routes/reviewRoutes.js";
 import bankRoutes from "./routes/bankRoutes.js";
 import stateRoutes from "./routes/stateRoutes.js";
 import countryRoutes from "./routes/countryRoutes.js";
-import businessTypesRoutes from "./routes//businessTYpesRoutes.js";
+import businessTypesRoutes from "./routes/businessTYpesRoutes.js";
 import shopifyRoutes from "./routes/shopifyAuthRoutes.js";
 import imageRoutes from "./routes/imagesRoutes.js";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";

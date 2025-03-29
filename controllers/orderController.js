@@ -18,6 +18,72 @@ export const fetchAllOrders = async (req, res) => {
               id
               name
             }
+               customer {
+          id
+          firstName
+          lastName
+       
+        }
+           billingAddress {
+              firstName
+              lastName
+              address1
+              address2
+              city
+              province
+              country
+              zip
+            }
+                shippingLine {
+          title
+          carrierIdentifier
+          code
+          deliveryCategory
+          custom
+          currentDiscountedPriceSet {
+            presentmentMoney {
+              amount
+              currencyCode
+            }
+          }
+        }
+          subtotalPriceSet {
+          presentmentMoney {
+            amount
+            currencyCode
+          }
+        }
+          totalDiscountsSet {
+          presentmentMoney {
+            amount
+            currencyCode
+          }
+        }
+           totalPriceSet {
+          presentmentMoney {
+            amount
+            currencyCode
+          }
+        }
+             totalTaxSet {
+          presentmentMoney {
+            amount
+            currencyCode
+          }
+        }
+          paymentGatewayNames
+        fullyPaid
+        shippingAddress {
+          firstName
+          lastName
+          address1
+          city
+          province
+          country
+          zip
+        }
+           requiresShipping
+            refundable
           }
         }
       }
