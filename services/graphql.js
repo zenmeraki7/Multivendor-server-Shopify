@@ -333,3 +333,19 @@ export const UPDATE_INVENTORY_QUANTITY = `
       }
     }
   `;
+
+export const FETCH_LOCATION = `
+  query {
+    location(id:null) {
+      
+          id
+          name
+          address {
+            address1
+            country
+            city
+          }
+        
+    }
+  }
+`;

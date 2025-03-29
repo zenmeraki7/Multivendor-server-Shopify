@@ -6,6 +6,7 @@ import shopify from "../config/shopify.js";
 import {
   CREATE_PRODUCT_QUERY,
   CREATE_VARIANT_QUERY,
+  FETCH_LOCATION,
   FETCH_PRODUCT_BY_ID,
   FETCH_PRODUCTS_QUERY,
   UPDATE_INVENTORY_QUANTITY,
@@ -720,7 +721,7 @@ export const approveProduct = async (req, res) => {
 
     const product = await Product.findById(id)
       .populate("images")
-      .populate("vendor", "companyName _id");
+      .populate("vendor", "companyName _id email fullName");
 
     const variants = await Variants.find({ productId: id });
 
@@ -788,6 +789,8 @@ export const approveProduct = async (req, res) => {
       (item) => item.variant != existingShopifyVariant?.title
     );
 
+    const LocationResponse = await client.query({ data: FETCH_LOCATION });
+
     const inventoryQuantityResponse = await client.query({
       data: {
         query: UPDATE_INVENTORY_QUANTITY,
@@ -799,7 +802,7 @@ export const approveProduct = async (req, res) => {
               {
                 delta: +existingVariant.quantity,
                 inventoryItemId: existingShopifyVariant?.inventoryItem?.id,
-                locationId: "gid://shopify/Location/98387394807",
+                locationId: LocationResponse.body.data.location?.id,
               },
             ],
           },
@@ -807,8 +810,7 @@ export const approveProduct = async (req, res) => {
       },
     });
 
-    const inventoryResponseData =
-    inventoryQuantityResponse.body.data;
+    const inventoryResponseData = inventoryQuantityResponse.body.data;
     const userErrors = inventoryResponseData?.userErrors;
     console.log(inventoryResponseData);
     // Check for errors and handle them
@@ -831,7 +833,7 @@ export const approveProduct = async (req, res) => {
               price: existingVariant.price.toString() || "",
               inventoryItem: {
                 sku: existingVariant.sku || "",
-                tracked:true
+                tracked: true,
               },
             },
           ],
@@ -866,7 +868,7 @@ export const approveProduct = async (req, res) => {
                 inventoryQuantities: [
                   {
                     availableQuantity: item.quantity,
-                    locationId: "gid://shopify/Location/98387394807",
+                    locationId: LocationResponse.body?.data?.location?.id,
                   },
                 ],
                 inventoryItem: {
@@ -923,12 +925,16 @@ export const approveProduct = async (req, res) => {
     //   to: product.seller._id,
     // });
 
-    // await sendEmail(
-    //   product.seller.email,
-    //   "Product approved",
-    //   `Dear ${product.seller.fullName},\n\nYour product "${product.title}" has been approved by the admin.`
-    // );
-console.log("inv",inventoryQuantityResponse.body.data.inventoryAdjustQuantities.inventoryAdjustmentGroup.changes);
+    await sendEmail(
+      product.vendor.email,
+      "Product approved",
+      `Dear ${product.vendor.fullName},\n\nYour product "${product.title}" has been approved by the admin.`
+    );
+    console.log(
+      "inv",
+      inventoryQuantityResponse.body.data.inventoryAdjustQuantities
+        .inventoryAdjustmentGroup.changes
+    );
     res.status(200).json({
       message: "Product approved successfully",
       product: response.body.data.productCreate.product,

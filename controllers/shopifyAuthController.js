@@ -149,4 +149,3 @@ async function storeSession(shop, accessToken) {
     console.log(err);
   }
 }
-
