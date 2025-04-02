@@ -43,6 +43,14 @@ app.use("/api/countries", countryRoutes);
 app.use("/api/business-type", businessTypesRoutes);
 app.use("/api/images", imageRoutes);
 app.use("/api/orders", orderRoutes);
+
+app.post('/webhooks/orders/create',async(req,res) => {
+  try{
+    console.log(req.body)
+  }catch(err){
+    console.log(err.message)
+  }
+})
 // Error Middleware
 app.use(errorMiddleware);
 

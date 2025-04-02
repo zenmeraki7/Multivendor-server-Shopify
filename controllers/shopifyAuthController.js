@@ -4,6 +4,7 @@ import crypto from "crypto";
 import axios from "axios";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { registerOrderWebhook } from "../config/webhook.js";
 
 export const shopifyAuth = async (req, res) => {
   const shop = req.query.shop;
@@ -64,7 +65,8 @@ export const shopifyAuthCallback = async (req, res) => {
 
     // Store access token in session or DB
     await storeSession(shop, accessToken);
-
+    console.log("first")
+    await registerOrderWebhook(shop, accessToken); // Register webhook for order creation
     // 🔹 Generate a JWT token
     const token = jwt.sign({ shop, accessToken }, process.env.JWT_SECRET, {
       expiresIn: "1d",
