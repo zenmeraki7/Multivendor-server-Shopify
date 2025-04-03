@@ -25,7 +25,7 @@ export const registerOrderWebhook = async (shop, accessToken) => {
         variables: {
           topic: "ORDERS_CREATE",
           webhookSubscription: {
-            callbackUrl: "https://6429-2409-4073-4dbc-c64e-4409-64af-d02-c6ab.ngrok-free.app/webhooks/orders/create",
+            callbackUrl: "https://93bb-2409-4073-4dbc-c64e-1c2a-b32e-19b7-463c.ngrok-free.app/webhooks/orders/create",
             format: "JSON",
           },
         },

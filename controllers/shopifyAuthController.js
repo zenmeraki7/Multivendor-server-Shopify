@@ -66,7 +66,6 @@ export const shopifyAuthCallback = async (req, res) => {
     // Store access token in session or DB
     await storeSession(shop, accessToken);
     console.log("first")
-    // await registerOrderWebhook(shop, accessToken); // Register webhook for order creation
     // 🔹 Generate a JWT token
     const token = jwt.sign({ shop, accessToken }, process.env.JWT_SECRET, {
       expiresIn: "1d",
@@ -143,6 +142,7 @@ async function storeSession(shop, accessToken) {
     let store = await Shop.findOne({ shop });
     if (!store) {
       store = new Shop({ shop, accessToken });
+      await registerOrderWebhook(shop, accessToken); // Register webhook for order creation
     } else {
       store.accessToken = accessToken;
     }
