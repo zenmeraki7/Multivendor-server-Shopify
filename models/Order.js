@@ -27,7 +27,7 @@ const lineItemSchema = new mongoose.Schema({
 });
 
 const vendorOrderSchema = new mongoose.Schema({
-  vendorName: String,
+  vendor: String,
   orderId: String,
   orderNumber: Number,
   createdAt: Date,
@@ -43,6 +43,6 @@ const vendorOrderSchema = new mongoose.Schema({
   shippingAddress: shippingAddressSchema,
 });
 
-const VendorOrder = mongoose.model("VendorOrder", vendorOrderSchema);
+const VendorOrder = mongoose.model("orders", vendorOrderSchema);
 
 export default VendorOrder;

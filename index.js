@@ -48,77 +48,82 @@ app.use("/api/orders", orderRoutes);
 app.post("/webhooks/orders/create", async (req, res) => {
   try {
     const order = req.body;
-    console.log(order);
-
-    // Group items by vendor
-    const vendorOrders = {};
-
-    order.line_items.forEach((item) => {
-      const vendor = item.vendor;
-
-      if (!vendorOrders[vendor]) {
-        vendorOrders[vendor] = {
-          items: [],
-          totalAmount: 0,
-        };
-      }
-
-      vendorOrders[vendor].items.push({
-        lineItemId: item.id.toString(),
-        productId: item.product_id.toString(),
-        title: item.title,
-        variantTitle: item.variant_title,
-        quantity: item.quantity,
-        price: parseFloat(item.price),
-        sku: item.sku,
-      });
-
-      vendorOrders[vendor].totalAmount +=
-        parseFloat(item.price) * item.quantity;
+    const isExistingOrder = await Order.findOne({
+      orderId: order.id.toString(),
     });
 
-    // Store vendor-specific order data with shipping details using Promise.all
-    await Promise.all(
-      Object.entries(vendorOrders).map(([vendorName, data]) => {
-        const vendorOrder = new Order({
-          vendorName,
-          orderId: order.id.toString(),
-          orderNumber: order.order_number,
-          createdAt: new Date(order.created_at),
-          orderStatus: order.financial_status,
-          currency: order.currency,
-          totalPrice: parseFloat(order.total_price),
-          subtotalPrice: parseFloat(order.subtotal_price),
-          totalTax: parseFloat(order.total_tax),
-          customerEmail: order.customer?.email || "",
-          customerName: `${order.customer?.first_name || ""} ${
-            order.customer?.last_name || ""
-          }`.trim(),
-          items: data.items,
-          totalAmount: data.totalAmount,
-          shippingAddress: order.shipping_address
-            ? {
-                firstName: order.shipping_address.first_name,
-                lastName: order.shipping_address.last_name,
-                company: order.shipping_address.company || "",
-                address1: order.shipping_address.address1,
-                address2: order.shipping_address.address2 || "",
-                city: order.shipping_address.city,
-                province: order.shipping_address.province,
-                provinceCode: order.shipping_address.province_code,
-                country: order.shipping_address.country,
-                countryCode: order.shipping_address.country_code,
-                zip: order.shipping_address.zip,
-                latitude: order.shipping_address.latitude || null,
-                longitude: order.shipping_address.longitude || null,
-              }
-            : null,
-        });
-        return vendorOrder.save();
-      })
-    );
+    if (!isExistingOrder) {
+      console.log("Saving new order to the database.");
+      // Group items by vendor
+      const vendorOrders = {};
 
-    console.log("Vendor-specific orders saved successfully");
+      order.line_items.forEach((item) => {
+        const vendor = item.vendor;
+
+        if (!vendorOrders[vendor]) {
+          vendorOrders[vendor] = {
+            items: [],
+            totalAmount: 0,
+          };
+        }
+
+        vendorOrders[vendor].items.push({
+          lineItemId: item.id.toString(),
+          productId: item.product_id.toString(),
+          title: item.title,
+          variantTitle: item.variant_title,
+          quantity: item.quantity,
+          price: parseFloat(item.price),
+          sku: item.sku,
+        });
+
+        vendorOrders[vendor].totalAmount +=
+          parseFloat(item.price) * item.quantity;
+      });
+
+      // Store vendor-specific order data with shipping details using Promise.all
+      await Promise.all(
+        Object.entries(vendorOrders).map(([vendorName, data]) => {
+          const vendorOrder = new Order({
+            vendor: vendorName,
+            orderId: order.id.toString(),
+            orderNumber: order.order_number,
+            createdAt: new Date(order.created_at),
+            orderStatus: order.financial_status,
+            currency: order.currency,
+            totalPrice: parseFloat(order.total_price),
+            subtotalPrice: parseFloat(order.subtotal_price),
+            totalTax: parseFloat(order.total_tax),
+            customerEmail: order.customer?.email || "",
+            customerName: `${order.customer?.first_name || ""} ${
+              order.customer?.last_name || ""
+            }`.trim(),
+            items: data.items,
+            totalAmount: data.totalAmount,
+            shippingAddress: order.shipping_address
+              ? {
+                  firstName: order.shipping_address.first_name,
+                  lastName: order.shipping_address.last_name,
+                  company: order.shipping_address.company || "",
+                  address1: order.shipping_address.address1,
+                  address2: order.shipping_address.address2 || "",
+                  city: order.shipping_address.city,
+                  province: order.shipping_address.province,
+                  provinceCode: order.shipping_address.province_code,
+                  country: order.shipping_address.country,
+                  countryCode: order.shipping_address.country_code,
+                  zip: order.shipping_address.zip,
+                  latitude: order.shipping_address.latitude || null,
+                  longitude: order.shipping_address.longitude || null,
+                }
+              : null,
+          });
+          return vendorOrder.save();
+        })
+      );
+
+      console.log("Vendor-specific orders saved successfully");
+    }
   } catch (err) {
     console.error(err.message);
   }
