@@ -16,6 +16,9 @@ import { logMiddleware } from "./middlewares/logMiddleware.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import cookieParser from "cookie-parser";
 import Order from "./models/Order.js";
+import mongoose from "mongoose";
+import Vendor from "./models/Vendor.js";
+import { sendEmail } from "./utils/sendEmail.js";
 dotenv.config();
 connectDB();
 
@@ -46,21 +49,32 @@ app.use("/api/images", imageRoutes);
 app.use("/api/orders", orderRoutes);
 
 app.post("/webhooks/orders/create", async (req, res) => {
+  console.log("Webhook received - starting order processing");
   try {
     const order = req.body;
+    console.log("Order data received:", order.id);
+
+    console.log("Checking if order already exists in database");
     const isExistingOrder = await Order.findOne({
       orderId: order.id.toString(),
     });
+    console.log(
+      "Existing order check result:",
+      isExistingOrder ? "Found" : "Not found"
+    );
 
     if (!isExistingOrder) {
       console.log("Saving new order to the database.");
       // Group items by vendor
       const vendorOrders = {};
+      console.log("Order line items count:", order.line_items.length);
 
-      order.line_items.forEach((item) => {
+      order.line_items.forEach((item, index) => {
         const vendor = item.vendor;
+        console.log(`Processing line item ${index + 1}, vendor: ${vendor}`);
 
         if (!vendorOrders[vendor]) {
+          console.log(`Creating new vendor group for ${vendor}`);
           vendorOrders[vendor] = {
             items: [],
             totalAmount: 0,
@@ -76,14 +90,27 @@ app.post("/webhooks/orders/create", async (req, res) => {
           price: parseFloat(item.price),
           sku: item.sku,
         });
+        console.log(`Added item: ${item.title} to vendor ${vendor}`);
 
         vendorOrders[vendor].totalAmount +=
           parseFloat(item.price) * item.quantity;
+        console.log(
+          `Updated total for vendor ${vendor}: ${vendorOrders[vendor].totalAmount}`
+        );
       });
+
+      console.log(
+        "Vendor grouping complete. Vendor count:",
+        Object.keys(vendorOrders).length
+      );
+      console.log("Starting to store vendor-specific orders");
 
       // Store vendor-specific order data with shipping details using Promise.all
       await Promise.all(
-        Object.entries(vendorOrders).map(([vendorName, data]) => {
+        Object.entries(vendorOrders).map(async ([vendorName, data], index) => {
+          console.log(
+            `Creating order object for vendor ${index + 1}: ${vendorName}`
+          );
           const vendorOrder = new Order({
             vendor: vendorName,
             orderId: order.id.toString(),
@@ -118,14 +145,77 @@ app.post("/webhooks/orders/create", async (req, res) => {
                 }
               : null,
           });
-          return vendorOrder.save();
+          console.log(`Order object created for vendor ${vendorName}`);
+
+          if (mongoose.Types.ObjectId.isValid(vendorName)) {
+            console.log(
+              `Vendor name ${vendorName} is a valid ObjectId, looking up vendor details`
+            );
+            try {
+              const vendorDetails = await Vendor.findById(vendorName);
+              console.log(
+                `Vendor lookup result: ${vendorDetails ? "Found" : "Not found"}`
+              );
+
+              if (vendorDetails) {
+                console.log(
+                  `Preparing email for vendor: ${vendorDetails.companyName}`
+                );
+                const message = `
+                    Hello ${vendorDetails.companyName},
+
+                    You have received a new order!
+
+                    Order ID: #${order.id.toString()}
+                    Total Amount: $${data.totalAmount}
+
+                    Thank you for being a valued vendor!
+
+                    Best Regards,  
+                    Your Company Name
+                    `;
+
+                console.log(`Sending email to: ${vendorDetails.email}`);
+                await sendEmail(
+                  vendorDetails.email,
+                  `New Order ${order.id.toString()} Received`,
+                  message
+                );
+                console.log(
+                  `Email sent successfully to ${vendorDetails.email}`
+                );
+              }
+            } catch (vendorErr) {
+              console.error(
+                `Error with vendor ${vendorName}:`,
+                vendorErr.message
+              );
+            }
+          } else {
+            console.log(
+              `Vendor name ${vendorName} is not a valid ObjectId, skipping vendor lookup`
+            );
+          }
+
+          console.log(`Saving order for vendor ${vendorName} to database`);
+          await vendorOrder.save();
+          console.log(`Order saved successfully for vendor ${vendorName}`);
+          return true;
         })
       );
 
-      console.log("Vendor-specific orders saved successfully");
+      console.log("All vendor-specific orders saved successfully");
+      res.status(200).send("Order processed successfully");
+    } else {
+      console.log(
+        `Order ${order.id} already exists in the database, skipping processing`
+      );
+      res.status(200).send("Order already processed");
     }
   } catch (err) {
-    console.error(err.message);
+    console.error("Error in order webhook:", err.message);
+    console.error("Error stack:", err.stack);
+    res.status(500).send("Error processing order");
   }
 });
 

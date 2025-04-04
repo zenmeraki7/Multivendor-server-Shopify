@@ -119,7 +119,7 @@ export const fetchAllOrders = async (req, res) => {
       throw new Error("Invalid response from Shopify API");
     }
 
-    console.log("✅ Orders fetched successfully:");
+    console.lo("✅ Orders fetched successfully:");
 
     res.status(200).json({ success: true, data: response.body.data.orders });
   } catch (error) {
