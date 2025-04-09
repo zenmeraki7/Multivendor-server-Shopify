@@ -72,10 +72,12 @@ router.get("/get-one/:id", authenticateShop, getVendorById);
 
 // get one product of seller by id
 router.get(
-  "/get-one-product/:productId",
+  "/get-one-approved-product/:productId",
   authenticateVendor,
   getApprovedProductOfVendorById
 );
+
+
 
 //views a single vendor by token
 router.get("/auth-token", authentication, getLoginedVendor);
