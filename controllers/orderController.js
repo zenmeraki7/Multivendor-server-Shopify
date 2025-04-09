@@ -1,127 +1,18 @@
 import shopify from "../config/shopify.js";
 import Orders from "../models/Order.js";
+import { OrderService } from "../services/OrderService/OrderService.js";
 
 export const fetchAllOrders = async (req, res) => {
   try {
-    if (!req.session) {
-      return res.status(401).json({ success: false, message: "Unauthorized: No session found" });
-    }
-
-    const client = new shopify.clients.Graphql({ session: req.session });
-
-    const query = `
-      query {
-        orders(first: 10) {
-          edges {
-            node {
-              id
-              createdAt
-              unpaid
-              name
-              customer {
-                id
-                firstName
-                lastName
-              }
-              billingAddress {
-                firstName
-                lastName
-                address1
-                address2
-                city
-                province
-                country
-                zip
-              }
-              shippingLine {
-                title
-                carrierIdentifier
-                code
-                deliveryCategory
-                custom
-                currentDiscountedPriceSet {
-                  presentmentMoney {
-                    amount
-                    currencyCode
-                  }
-                }
-              }
-              totalPriceSet {
-                presentmentMoney {
-                  amount
-                  currencyCode
-                }
-              }
-              totalTaxSet {
-                presentmentMoney {
-                  amount
-                  currencyCode
-                }
-              }
-              paymentGatewayNames
-              fullyPaid
-              shippingAddress {
-                firstName
-                lastName
-                address1
-                address2
-                city
-                company
-                province
-                country
-                countryCodeV2
-                formatted
-                formattedArea
-                latitude
-                longitude
-                provinceCode
-                countryCode
-                zip
-              }
-              lineItems(first: 10) {
-                edges {
-                  node {
-                    id
-                    title
-                    image {
-                      url
-                    }
-                    vendor
-                    quantity
-                    sku
-                    variant {
-                      id
-                      barcode
-                      displayName
-                      image {
-                        url
-                      }
-                      title
-                      sku
-                      price
-                    }
-                  }
-                }
-              }
-              requiresShipping
-              refundable
-            }
-          }
-        }
-      }
-    `;
-
     console.log("🔍 Fetching orders from Shopify...");
 
-    const response = await client.query({ data: query });
+    const service = new OrderService(req.session);
 
-    if (!response || !response.body || !response.body.data) {
-      throw new Error("Invalid response from Shopify API");
-    }
+    const orders = await service.fetchAllOrders();
 
-    console.lo("✅ Orders fetched successfully:");
+    console.log("✅ Orders fetched successfully");
 
-    res.status(200).json({ success: true, data: response.body.data.orders });
+    res.status(200).json({ success: true, data: orders });
   } catch (error) {
     console.error("❌ Fetch Orders Error:", error.message);
 
@@ -151,5 +42,28 @@ export const fetchVendorOrders = async (req, res) => {
     return res
       .status(500)
       .json({ error: err.message, message: "fetch orders failed" });
+  }
+};
+
+export const fetchOrderById = async (req, res) => {
+  try {
+    console.log("🔍 Fetching order from Shopify...");
+    const orderId = req.params?.id;
+
+    const service = new OrderService(req.session);
+
+    const order = await service.fetchOrderById(orderId);
+
+    console.log("✅ Order fetched successfully");
+
+    res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    console.error("❌ Fetch Orders Error:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch order",
+      error: error.message || error,
+    });
   }
 };
